@@ -65,9 +65,15 @@
     {% endfor %}
 </div>
 
-
-
 <script>
+// ===============================
+// NUMERIC CHAPTER SORT (ADDED)
+// ===============================
+function getChapterNumber(title) {
+    const match = title.match(/(\d+(\.\d+)?)/);
+    return match ? parseFloat(match[1]) : Infinity;
+}
+
 // Unique key for this manga page
 const relation = "{{ relation }}";
 const cacheKey = `manga_details_${relation}`;
@@ -76,7 +82,7 @@ const cacheKey = `manga_details_${relation}`;
 function renderDetails(dataObj) {
     document.getElementById("manga-title").textContent = dataObj.title || "Details";
 
-    if(dataObj.img_url){
+    if (dataObj.img_url) {
         document.getElementById("manga-image").innerHTML =
             `<img src="${dataObj.img_url}" alt="${dataObj.title}" style="max-width:300px;">`;
     }
@@ -86,9 +92,10 @@ function renderDetails(dataObj) {
     // Info table
     const infoTable = document.getElementById("info-table");
     infoTable.innerHTML = "";
-    for(const [k, v] of Object.entries(dataObj.info || {})){
+    for (const [k, v] of Object.entries(dataObj.info || {})) {
         const row = document.createElement("tr");
-        row.innerHTML = `<th>${k.replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase())}</th><td>${v}</td>`;
+        row.innerHTML =
+            `<th>${k.replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase())}</th><td>${v}</td>`;
         infoTable.appendChild(row);
     }
 
@@ -102,19 +109,25 @@ function renderDetails(dataObj) {
         genresDiv.appendChild(span);
     });
 
-    // Chapters
+    // ✅ Proper numeric ascending sort
+    const chapters = [...(dataObj.chapters || [])].sort(
+        (a, b) => getChapterNumber(a.title) - getChapterNumber(b.title)
+    );
+
     const chaptersUl = document.getElementById("chapters");
-    chaptersUl.innerHTML = "";
-    (dataObj.chapters || []).forEach(ch => {
-        const li = document.createElement("li");
-        li.innerHTML = `<a href="${ch.url}" target="_blank">${ch.title}</a>`;
-        chaptersUl.appendChild(li);
-    });
+    if (chaptersUl) {
+        chaptersUl.innerHTML = "";
+        chapters.forEach(ch => {
+            const li = document.createElement("li");
+            li.innerHTML = `<a href="${ch.url}" target="_blank">${ch.title}</a>`;
+            chaptersUl.appendChild(li);
+        });
+    }
 }
 
 // ✅ Check if cached
 const cachedData = localStorage.getItem(cacheKey);
-if(cachedData){
+if (cachedData) {
     renderDetails(JSON.parse(cachedData));
 } else {
     // ❌ Not cached → use server-side data
@@ -126,6 +139,12 @@ if(cachedData){
         genres: {{ data.genres | tojson }},
         chapters: {{ data.chapters | tojson }}
     };
+
+    // ✅ Sort BEFORE caching
+    serverData.chapters.sort(
+        (a, b) => getChapterNumber(a.title) - getChapterNumber(b.title)
+    );
+
     localStorage.setItem(cacheKey, JSON.stringify(serverData));
     renderDetails(serverData);
 }
