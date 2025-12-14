@@ -1,0 +1,202 @@
+/* =========================
+   GENERAL BODY & HEADINGS
+========================= */
+body {
+    font-family: Arial, sans-serif;
+    background: #111;
+    color: #fff;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+}
+
+/* =========================
+   HOME PAGE GRID
+========================= */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 15px;
+}
+
+.card {
+    background: #1c1c1c;
+    border-radius: 8px;
+    overflow: hidden;
+    text-align: center;
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: scale(1.05);
+}
+
+.card img {
+    width: 100%;
+    height: 260px;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+.card h3 {
+    font-size: 14px;
+    padding: 10px;
+    color: white;
+    text-align: center;
+}
+
+/* =========================
+   PAGINATION
+========================= */
+.pagination {
+    text-align: center;
+    margin-top: 30px;
+}
+
+.pagination a,
+.pagination span {
+    margin: 5px;
+    padding: 6px 12px;
+    background: #333;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 4px;
+}
+
+.pagination .current {
+    background: #ff4757;
+}
+
+.pagination .dots {
+    background: transparent;
+}
+
+/* =========================
+   BACK BUTTON
+========================= */
+.back-btn {
+    display: inline-block;
+    margin-bottom: 15px;
+    color: #00d1ff;
+    text-decoration: none;
+}
+
+/* =========================
+   DETAILS PAGE TABLE & GENRES
+========================= */
+.info-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 15px;
+}
+
+.info-table th,
+.info-table td {
+    border: 1px solid #333;
+    padding: 8px;
+}
+
+.genre {
+    background: #333;
+    padding: 4px 8px;
+    margin: 3px;
+    display: inline-block;
+}
+
+/* =========================
+   CHAPTERS LIST
+========================= */
+.chapters li {
+    margin: 6px 0;
+}
+
+.chapters li a {
+    color: white;
+    border: solid 2px black;
+    padding: 4px 6px;
+    display: block;
+    border-radius: 4px;
+    text-decoration: none;
+}
+
+.chapters li a:hover {
+    background: #222;
+    border-color: #00d1ff;
+}
+
+/* =========================
+   CHAPTER GRID (DETAILS PAGE)
+========================= */
+.chapters-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* space between rows */
+}
+
+.chapter-row {
+    display: flex;
+    gap: 20px; /* space between columns */
+    flex-wrap: wrap; /* for small screens */
+}
+
+.chapter-col {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex: 1; /* equal width columns */
+    min-width: 150px; /* responsive minimum width */
+}
+
+.chapter-col li {
+    margin-bottom: 5px;
+}
+
+.chapter-col li a {
+color: white;
+text-decoration: none;
+
+}
+
+.manga-image {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.manga-image img {
+    border-radius: 6px;
+    max-width: 100%;
+    height: auto;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+@media (max-width: 768px) {
+    .chapter-row {
+        flex-direction: column;
+    }
+
+    .chapter-col {
+        min-width: 100%;
+    }
+
+    .grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    }
+
+    .card img {
+        height: 200px;
+    }
+}
+
+@media (max-width: 480px) {
+    .grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+
+    .card img {
+        height: 160px;
+    }
+}

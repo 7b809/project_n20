@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Manga Browser</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <h1>Manga List</h1>
+
+    <div id="grid" class="grid"></div>
+
+    <div id="pagination" class="pagination"></div>
+
+    <script>
+      const urlParams = new URLSearchParams(window.location.search);
+      const currentPage = parseInt(urlParams.get("page") || "1");
+      const cacheKey = `manga_page_${currentPage}`;
+
+      const grid = document.getElementById("grid");
+      const pagination = document.getElementById("pagination");
+
+      function renderCards(cards) {
+        grid.innerHTML = "";
+
+        cards.forEach((item) => {
+          const card = document.createElement("div");
+          card.className = "card";
+
+          const encodedUrl = encodeURIComponent(item.url);
+
+          card.innerHTML = `
+    <a href="/details?relation=${encodeURIComponent(
+      item.relation
+    )}&url=${encodeURIComponent(item.url)}&img_url=${encodeURIComponent(
+            item.img_url
+          )}&title=${encodeURIComponent(item.title)}">
+        <img src="${item.img_url}" alt="${item.title}">
+        <h3>${item.title}</h3>
+    </a>
+`;
+
+          grid.appendChild(card);
+        });
+      }
+
+      function renderPagination(current, max) {
+        pagination.innerHTML = "";
+
+        for (let p = 1; p <= max; p++) {
+          if (p === current) {
+            pagination.innerHTML += `<span class="current">${p}</span>`;
+          } else if (
+            p <= 5 ||
+            p > max - 2 ||
+            (p >= current - 2 && p <= current + 2)
+          ) {
+            pagination.innerHTML += `<a href="/?page=${p}">${p}</a>`;
+          } else if (p === 6) {
+            pagination.innerHTML += `<span class="dots">...</span>`;
+          }
+        }
+      }
+
+      async function loadPage() {
+        if (localStorage.getItem(cacheKey)) {
+          const cached = JSON.parse(localStorage.getItem(cacheKey));
+          renderCards(cached.cards);
+          renderPagination(currentPage, cached.max_page);
+          return;
+        }
+
+        const res = await fetch(`/api/page/${currentPage}`);
+        const data = await res.json();
+
+        localStorage.setItem(cacheKey, JSON.stringify(data));
+
+        renderCards(data.cards);
+        renderPagination(currentPage, data.max_page);
+      }
+
+      loadPage();
+    </script>
+  </body>
+</html>
