@@ -54,6 +54,38 @@ def api_page(page):
     })
 
 # =========================
+# NEW: GET FIRST IMAGE (GENERIC readerarea)
+# =========================
+@app.route("/api/chapter-first-image-v2")
+def chapter_first_image_v2():
+    chapter_url = request.args.get("url")
+    if not chapter_url:
+        return jsonify({"error": "Missing chapter URL"}), 400
+
+    try:
+        res = requests.get(chapter_url, headers=HEADERS, timeout=10)
+        if res.status_code == 404:
+            return jsonify({"error": "Chapter URL not found"}), 404
+
+        res.raise_for_status()
+        soup = BeautifulSoup(res.text, "html.parser")
+
+        readerarea = soup.find("div", id="readerarea")
+        if not readerarea:
+            return jsonify({"error": "readerarea div not found"}), 404
+
+        first_img = readerarea.find("img")
+        if not first_img or not first_img.get("src"):
+            return jsonify({"error": "No image found in readerarea"}), 404
+
+        return jsonify({
+            "first_image_url": first_img["src"]
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# =========================
 # HOME ROUTE (UNCHANGED)
 # =========================
 @app.route("/")
@@ -108,9 +140,7 @@ def scrape_details(url):
     data["chapters"] = chapters
     return data
 
-# =========================
-# NEW: GET FIRST IMAGE OF A CHAPTER
-# =========================
+
 # =========================
 # NEW: GET FIRST IMAGE OF A CHAPTER (FIXED)
 # =========================
@@ -119,7 +149,6 @@ def chapter_first_image():
     chapter_url = request.args.get("url")
     if not chapter_url:
         return jsonify({"error": "Missing chapter URL"}), 400
-    print(chapter_url)
 
     try:
         res = requests.get(chapter_url, headers=HEADERS, timeout=10)
@@ -129,20 +158,24 @@ def chapter_first_image():
         res.raise_for_status()
         soup = BeautifulSoup(res.text, "html.parser")
 
-        # Look inside #readerarea for the first image
-        img_tag = soup.select_one("#readerarea img.ts-main-image")
+        # ✅ correct selector (works with noscript)
+        readerarea = soup.find("div", id="readerarea")
+        if not readerarea:
+            return jsonify({"error": "readerarea not found"}), 404
+
+        img_tag = readerarea.find("img")
         if not img_tag or not img_tag.get("src"):
-            return jsonify({"error": "No image found"}), 404
+            return jsonify({"error": "No image found in readerarea"}), 404
 
         first_img_url = img_tag["src"]
+
+        # extract folder path
         parts = first_img_url.replace(BASE_IMG_URL, "").rsplit("/", 1)
         folder_path = parts[0]
-        first_img_file = parts[1]
 
         return jsonify({
-            "folder_path": folder_path,
-            "first_img_file": first_img_file,
-            "base_url": BASE_IMG_URL
+            "base_url": BASE_IMG_URL,
+            "folder_path": folder_path
         })
 
     except Exception as e:

@@ -1,134 +1,247 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>{{ title if title else "Manga Details" }}</title>
-    <link rel="stylesheet" href="/static/style.css">
+  <meta charset="UTF-8" />
+  <title>{{ title if title else "Manga Details" }}</title>
+  <link rel="stylesheet" href="/static/style.css" />
+<style>
+#scroll-controls{
+  position: fixed;
+  right: 10%;
+  bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 9999;
+}
+
+#scroll-controls button{
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  background: #111;
+  color: #fff;
+  opacity: 0.7;
+}
+
+#scroll-controls button:hover{
+  opacity: 1;
+}
+</style>
+
 </head>
+
 <body>
+    <!-- 🔼🔽 SCROLL CONTROLS -->
+<div id="scroll-controls">
+  <button id="scroll-up">⬆</button>
+  <button id="scroll-down">⬇</button>
+</div>
 
 <a class="back-btn" href="/">⬅ Back to Home</a>
 
 <h1 id="manga-title">{{ title if title else "Details" }}</h1>
 
-<!-- Show main image -->
 <div id="manga-image" class="manga-image">
-    {% if img_url %}
-    <img src="{{ img_url }}" alt="{{ title }}" style="max-width:300px;">
-    {% endif %}
+  {% if img_url %}
+  <img src="{{ img_url }}" alt="{{ title }}" style="max-width:300px;">
+  {% endif %}
 </div>
 
-<p id="description" class="description">{{ data.description }}</p>
+<p id="description">{{ data.description }}</p>
 
 <h2>Info</h2>
-<table id="info-table" class="info-table">
-    {% for k, v in data.info.items() %}
-    <tr>
-        <th>{{ k.replace('_',' ').title() }}</th>
-        <td>{{ v }}</td>
-    </tr>
-    {% endfor %}
+<table id="info-table">
+{% for k, v in data.info.items() %}
+<tr><th>{{ k.replace('_',' ').title() }}</th><td>{{ v }}</td></tr>
+{% endfor %}
 </table>
 
 <h2>Genres</h2>
-<div id="genres" class="genres">
-    {% for g in data.genres %}
-        <span class="genre">{{ g }}</span>
-    {% endfor %}
+<div id="genres">
+{% for g in data.genres %}
+<span class="genre">{{ g }}</span>
+{% endfor %}
 </div>
 
 <h2>Chapters</h2>
 <div class="chapters-grid">
-    {% set sorted_chapters = data.chapters | sort(attribute='title') %}
-    {% set chunk_size = 10 %}
-    {% set total_cols = 4 %}
-    {% set chunks = (sorted_chapters | length) // chunk_size + ((sorted_chapters | length) % chunk_size > 0) %}
-
-    {% for i in range(chunks) %}
-        <div class="chapter-row">
-            {% for j in range(total_cols) %}
-                {% set start = i*chunk_size*total_cols + j*chunk_size %}
-                {% set end = start + chunk_size %}
-                {% set col_chapters = sorted_chapters[start:end] %}
-
-                {% if col_chapters %}
-                <ul class="chapter-col">
-                    {% for ch in col_chapters %}
-                    <li>
-                        <a href="{{ ch.url }}" target="_blank">{{ ch.title }}</a>
-                    </li>
-                    {% endfor %}
-                </ul>
-                {% endif %}
-            {% endfor %}
-        </div>
-    {% endfor %}
+{% set sorted_chapters = data.chapters | sort(attribute='title') %}
+{% for ch in sorted_chapters %}
+  <div>
+    <a href="{{ ch.url }}" data-chapter-url="{{ ch.url }}">{{ ch.title }}</a>
+    <button class="show-btn" data-chapter-url="{{ ch.url }}">Show Images</button>
+  </div>
+{% endfor %}
 </div>
 
+<!-- 📘 READER UI -->
+<h2 id="reader-title" style="display:none;"></h2>
+<div id="page-counter"></div>
+<div id="reader"></div>
 
-
+<!-- ================= EXISTING JS (UNCHANGED) ================= -->
 <script>
-// Unique key for this manga page
 const relation = "{{ relation }}";
 const cacheKey = `manga_details_${relation}`;
 
-// Render function
-function renderDetails(dataObj) {
-    document.getElementById("manga-title").textContent = dataObj.title || "Details";
-
-    if(dataObj.img_url){
-        document.getElementById("manga-image").innerHTML =
-            `<img src="${dataObj.img_url}" alt="${dataObj.title}" style="max-width:300px;">`;
-    }
-
-    document.getElementById("description").textContent = dataObj.description || "";
-
-    // Info table
-    const infoTable = document.getElementById("info-table");
-    infoTable.innerHTML = "";
-    for(const [k, v] of Object.entries(dataObj.info || {})){
-        const row = document.createElement("tr");
-        row.innerHTML = `<th>${k.replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase())}</th><td>${v}</td>`;
-        infoTable.appendChild(row);
-    }
-
-    // Genres
-    const genresDiv = document.getElementById("genres");
-    genresDiv.innerHTML = "";
-    (dataObj.genres || []).forEach(g => {
-        const span = document.createElement("span");
-        span.className = "genre";
-        span.textContent = g;
-        genresDiv.appendChild(span);
-    });
-
-    // Chapters
-    const chaptersUl = document.getElementById("chapters");
-    chaptersUl.innerHTML = "";
-    (dataObj.chapters || []).forEach(ch => {
-        const li = document.createElement("li");
-        li.innerHTML = `<a href="${ch.url}" target="_blank">${ch.title}</a>`;
-        chaptersUl.appendChild(li);
-    });
-}
-
-// ✅ Check if cached
 const cachedData = localStorage.getItem(cacheKey);
-if(cachedData){
-    renderDetails(JSON.parse(cachedData));
-} else {
-    // ❌ Not cached → use server-side data
-    const serverData = {
-        title: "{{ title }}",
-        img_url: "{{ img_url }}",
-        description: {{ data.description | tojson }},
-        info: {{ data.info | tojson }},
-        genres: {{ data.genres | tojson }},
-        chapters: {{ data.chapters | tojson }}
-    };
-    localStorage.setItem(cacheKey, JSON.stringify(serverData));
-    renderDetails(serverData);
+if(!cachedData){
+  localStorage.setItem(cacheKey, JSON.stringify({
+    title:"{{ title }}",
+    img_url:"{{ img_url }}"
+  }));
 }
+</script>
+
+<!-- ================= 🔥 READER ENGINE ================= -->
+<script>
+const reader = document.getElementById("reader");
+const counter = document.getElementById("page-counter");
+const readerTitle = document.getElementById("reader-title");
+
+let chapterList = [...document.querySelectorAll(".show-btn")].map(b => b.dataset.chapterUrl);
+let currentChapterIndex = -1;
+let loading = false;
+
+/* ================= CORE ================= */
+
+document.addEventListener("click", e => {
+  if(!e.target.classList.contains("show-btn")) return;
+  const url = e.target.dataset.chapterUrl;
+  startChapter(url, true);
+});
+
+async function startChapter(chapterUrl, clear=true){
+  if(loading) return;
+  loading = true;
+
+  if(clear){
+    reader.innerHTML = "";
+    window.scrollTo(0,0);
+  }
+
+  currentChapterIndex = chapterList.indexOf(chapterUrl);
+  readerTitle.style.display = "block";
+  readerTitle.textContent = `Reading Chapter ${currentChapterIndex+1}`;
+
+  const cacheKey = `chapter_cache_${chapterUrl}`;
+  let images = JSON.parse(localStorage.getItem(cacheKey));
+
+  if(!images){
+    images = await fetchChapterImages(chapterUrl);
+    localStorage.setItem(cacheKey, JSON.stringify(images));
+  }
+
+  renderImages(images, chapterUrl);
+  restoreProgress(chapterUrl);
+  loading = false;
+}
+
+/* ================= IMAGE FETCH ================= */
+
+async function fetchChapterImages(chapterUrl){
+  const res = await fetch(`/api/chapter-first-image?url=${encodeURIComponent(chapterUrl)}`);
+  const data = await res.json();
+  if(!data.base_url) return [];
+
+  const base = `${data.base_url}${data.folder_path}`;
+  const imgs = [];
+
+  for(let i=1;i<=300;i++){
+    const num = String(i).padStart(3,"0");
+    const url = `${base}/${num}.jpg`;
+    if(!(await exists(url))) break;
+    imgs.push(url);
+  }
+  return imgs;
+}
+
+function exists(url){
+  return new Promise(r=>{
+    const i = new Image();
+    i.onload=()=>r(true);
+    i.onerror=()=>r(false);
+    i.src=url;
+  });
+}
+
+/* ================= RENDER ================= */
+
+function renderImages(images, chapterUrl){
+  images.forEach((src, idx)=>{
+    const img = document.createElement("img");
+    img.src = src;
+    img.loading = "lazy";
+    img.style.width = "100%";
+    img.style.maxWidth = "720px";
+    img.dataset.index = idx+1;
+    reader.appendChild(img);
+  });
+
+  updateCounter(1, images.length);
+  trackScroll(chapterUrl, images.length);
+}
+
+/* ================= PAGE COUNTER ================= */
+
+function updateCounter(page,total){
+  counter.textContent = `Page ${page} / ${total}`;
+}
+
+function trackScroll(chapterUrl,total){
+  window.onscroll = () => {
+    const imgs = reader.querySelectorAll("img");
+    imgs.forEach(img=>{
+      const rect = img.getBoundingClientRect();
+      if(rect.top >= 0 && rect.top < window.innerHeight/2){
+        updateCounter(img.dataset.index, total);
+        localStorage.setItem(`progress_${chapterUrl}`, img.dataset.index);
+      }
+    });
+
+    if(window.innerHeight + window.scrollY >= document.body.offsetHeight-50){
+      loadNextChapter();
+    }
+  };
+}
+
+/* ================= RESUME ================= */
+
+function restoreProgress(chapterUrl){
+  const page = localStorage.getItem(`progress_${chapterUrl}`);
+  if(!page) return;
+  const img = reader.querySelector(`img[data-index="${page}"]`);
+  if(img) img.scrollIntoView();
+}
+
+/* ================= AUTO NEXT CHAPTER ================= */
+
+function loadNextChapter(){
+  if(currentChapterIndex+1 >= chapterList.length) return;
+  startChapter(chapterList[currentChapterIndex+1], false);
+}
+</script>
+<script>
+const upBtn = document.getElementById("scroll-up");
+const downBtn = document.getElementById("scroll-down");
+
+upBtn.addEventListener("click", () => {
+  const firstImg = document.querySelector("#reader img");
+  if(firstImg){
+    firstImg.scrollIntoView({ behavior:"smooth", block:"start" });
+  }
+});
+
+downBtn.addEventListener("click", () => {
+  const imgs = document.querySelectorAll("#reader img");
+  if(imgs.length){
+    imgs[imgs.length - 1].scrollIntoView({ behavior:"smooth", block:"end" });
+  }
+});
 </script>
 
 </body>
