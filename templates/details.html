@@ -18,26 +18,22 @@
 }
 
 #scroll-controls button{
-  width: 64px;
-  height: 64px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   border: none;
-  font-size: 28px;
+  font-size: 50px;
   cursor: pointer;
   background: #111;
   color: #fff;
   opacity: 0.85;
 }
 
-#scroll-controls button:hover{
-  opacity: 1;
-}
-
 /* ================= CHAPTER LIST ================= */
 .chapters-grid{
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   width: 100%;
 }
 
@@ -45,28 +41,48 @@
   display: flex;
   align-items: center;
   width: 100%;
-  padding: 12px 14px;
+  padding: 14px 16px;
   background: #f5f5f5;
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
 .chapters-grid a{
   flex: 1;
-  font-size: 16px;
-  line-height: 1.5;
+  font-size: 18px;             /* ⬆ increased */
+  line-height: 1.6;
   word-break: break-word;
   white-space: normal;
   text-decoration: none;
   color: #111;
-  margin-right: 10px;
+  margin-right: 12px;
 }
 
+/* GO BUTTON */
 .chapters-grid .show-btn{
   flex-shrink: 0;
-  padding: 8px 12px;
+  padding: 10px 16px;
   font-size: 14px;
   border-radius: 6px;
   cursor: pointer;
+  border: none;
+  background: #1faa59;         /* green */
+  color: #fff;                 /* white text */
+}
+
+/* ================= PROGRESS BAR ================= */
+#progress-wrapper{
+  position: sticky;
+  top: 0;
+  z-index: 999;
+  background: #fff;
+  padding: 6px 0;
+}
+
+#progress-bar{
+  width: 0%;
+  height: 6px;
+  background: #1faa59;
+  transition: width 0.2s ease;
 }
 
 /* ================= READER ================= */
@@ -103,10 +119,7 @@
 <h2>Info</h2>
 <table id="info-table">
 {% for k, v in data.info.items() %}
-<tr>
-  <th>{{ k.replace('_',' ').title() }}</th>
-  <td>{{ v }}</td>
-</tr>
+<tr><th>{{ k.replace('_',' ').title() }}</th><td>{{ v }}</td></tr>
 {% endfor %}
 </table>
 
@@ -121,14 +134,21 @@
 <div class="chapters-grid">
 {% for ch in data.chapters | reverse %}
   <div>
-    <a href="{{ ch.url }}" data-chapter-url="{{ ch.url }}">{{ ch.title }}</a>
-    <button class="show-btn" data-chapter-url="{{ ch.url }}">Show Images</button>
+    <a href="{{ ch.url }}" class="chapter-link" data-chapter-url="{{ ch.url }}">
+      {{ ch.title }}
+    </a>
+    <button class="show-btn" data-chapter-url="{{ ch.url }}">GO</button>
   </div>
 {% endfor %}
 </div>
 
 <!-- 📘 READER UI -->
 <h2 id="reader-title" style="display:none;"></h2>
+
+<div id="progress-wrapper">
+  <div id="progress-bar"></div>
+</div>
+
 <div id="page-counter"></div>
 <div id="reader"></div>
 
@@ -137,8 +157,7 @@
 const relation = "{{ relation }}";
 const cacheKey = `manga_details_${relation}`;
 
-const cachedData = localStorage.getItem(cacheKey);
-if(!cachedData){
+if(!localStorage.getItem(cacheKey)){
   localStorage.setItem(cacheKey, JSON.stringify({
     title:"{{ title }}",
     img_url:"{{ img_url }}"
@@ -151,6 +170,7 @@ if(!cachedData){
 const reader = document.getElementById("reader");
 const counter = document.getElementById("page-counter");
 const readerTitle = document.getElementById("reader-title");
+const progressBar = document.getElementById("progress-bar");
 
 let chapterList = [...document.querySelectorAll(".show-btn")].map(b => b.dataset.chapterUrl);
 let currentChapterIndex = -1;
@@ -158,10 +178,17 @@ let loading = false;
 
 /* ================= CORE ================= */
 
+// GO button
 document.addEventListener("click", e => {
-  if(!e.target.classList.contains("show-btn")) return;
-  const url = e.target.dataset.chapterUrl;
-  startChapter(url, true);
+  if(e.target.classList.contains("show-btn")){
+    startChapter(e.target.dataset.chapterUrl, true);
+  }
+
+  // Chapter title click
+  if(e.target.classList.contains("chapter-link")){
+    e.preventDefault();
+    startChapter(e.target.dataset.chapterUrl, true);
+  }
 });
 
 async function startChapter(chapterUrl, clear=true){
@@ -171,11 +198,12 @@ async function startChapter(chapterUrl, clear=true){
   if(clear){
     reader.innerHTML = "";
     window.scrollTo(0,0);
+    progressBar.style.width = "0%";
   }
 
   currentChapterIndex = chapterList.indexOf(chapterUrl);
   readerTitle.style.display = "block";
-  readerTitle.textContent = `Reading Chapter ${currentChapterIndex+1}`;
+  readerTitle.textContent = `Reading Chapter ${currentChapterIndex + 1}`;
 
   const cacheKey = `chapter_cache_${chapterUrl}`;
   let images = JSON.parse(localStorage.getItem(cacheKey));
@@ -233,10 +261,12 @@ function renderImages(images, chapterUrl){
   trackScroll(chapterUrl, images.length);
 }
 
-/* ================= PAGE COUNTER ================= */
+/* ================= PAGE COUNTER + PROGRESS ================= */
 
 function updateCounter(page,total){
   counter.textContent = `Page ${page} / ${total}`;
+  const percent = Math.round((page / total) * 100);
+  progressBar.style.width = percent + "%";
 }
 
 function trackScroll(chapterUrl,total){
@@ -244,13 +274,13 @@ function trackScroll(chapterUrl,total){
     const imgs = reader.querySelectorAll("img");
     imgs.forEach(img=>{
       const rect = img.getBoundingClientRect();
-      if(rect.top >= 0 && rect.top < window.innerHeight/2){
+      if(rect.top >= 0 && rect.top < window.innerHeight / 2){
         updateCounter(img.dataset.index, total);
         localStorage.setItem(`progress_${chapterUrl}`, img.dataset.index);
       }
     });
 
-    if(window.innerHeight + window.scrollY >= document.body.offsetHeight-50){
+    if(window.innerHeight + window.scrollY >= document.body.offsetHeight - 50){
       loadNextChapter();
     }
   };
@@ -268,8 +298,8 @@ function restoreProgress(chapterUrl){
 /* ================= AUTO NEXT CHAPTER ================= */
 
 function loadNextChapter(){
-  if(currentChapterIndex+1 >= chapterList.length) return;
-  startChapter(chapterList[currentChapterIndex+1], false);
+  if(currentChapterIndex + 1 >= chapterList.length) return;
+  startChapter(chapterList[currentChapterIndex + 1], false);
 }
 </script>
 
@@ -277,20 +307,19 @@ function loadNextChapter(){
 const upBtn = document.getElementById("scroll-up");
 const downBtn = document.getElementById("scroll-down");
 
-upBtn.addEventListener("click", () => {
+upBtn.onclick = () => {
   const firstImg = document.querySelector("#reader img");
-  if(firstImg){
-    firstImg.scrollIntoView({ behavior:"smooth", block:"start" });
-  }
-});
+  if(firstImg) firstImg.scrollIntoView({ behavior:"smooth", block:"start" });
+};
 
-downBtn.addEventListener("click", () => {
+downBtn.onclick = () => {
   const imgs = document.querySelectorAll("#reader img");
   if(imgs.length){
     imgs[imgs.length - 1].scrollIntoView({ behavior:"smooth", block:"end" });
   }
-});
+};
 </script>
 
 </body>
 </html>
+
