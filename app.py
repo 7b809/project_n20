@@ -9,6 +9,7 @@ CORS(app)
 BASE_URL = "https://hentai20.io/page/{}"
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 BASE_IMG_URL = "https://img.hentai1.io/"
+SEARCH_URL = "https://hentai20.io/page/{}/?s={}"
 
 # =========================
 # SCRAPE PAGE DATA (UNCHANGED)
@@ -42,6 +43,90 @@ def scrape_page(page_no):
 
     return cards, max_page
 
+
+# =========================
+# SCRAPE DETAILS PAGE (UNCHANGED)
+# =========================
+def scrape_details(url):
+    res = requests.get(url, headers=HEADERS, timeout=15)
+    res.raise_for_status()
+
+    soup = BeautifulSoup(res.text, "html.parser")
+    data = {}
+
+    desc = soup.select_one(".entry-content p")
+    data["description"] = desc.get_text(strip=True) if desc else ""
+
+    info = {}
+    for row in soup.select("table.infotable tr"):
+        tds = row.find_all("td")
+        if len(tds) == 2:
+            key = tds[0].get_text(strip=True).lower().replace(" ", "_")
+            value = tds[1].get_text(strip=True)
+            info[key] = value
+    data["info"] = info
+
+    data["genres"] = [a.get_text(strip=True) for a in soup.select(".seriestugenre a")]
+
+    chapters = []
+    for li in soup.select("#chapterlist li"):
+        a = li.select_one("a")
+        if not a:
+            continue
+        num = a.select_one(".chapternum")
+        date = a.select_one(".chapterdate")
+        title = (num.get_text(strip=True) if num else "")
+        date_text = (date.get_text(strip=True) if date else "")
+        chapters.append({
+            "title": f"{title} __ {date_text}".strip(),
+            "url": a.get("href")
+        })
+
+    data["chapters"] = chapters
+    return data
+
+
+# =========================
+# SCRAPE SEARCH RESULTS
+# =========================
+def scrape_search(keyword, page_no=1):
+    url = SEARCH_URL.format(page_no, keyword)
+    res = requests.get(url, headers=HEADERS, timeout=15)
+    res.raise_for_status()
+
+    soup = BeautifulSoup(res.text, "html.parser")
+    cards = []
+
+    # search results container
+    for bs in soup.select("div.listupd div.bs"):
+        a_tag = bs.select_one("a")
+        img_tag = bs.select_one("img")
+
+        if not a_tag or not img_tag:
+            continue
+
+        cards.append({
+            "relation": None,  # not present in search page
+            "title": a_tag.get("title") or img_tag.get("title"),
+            "url": a_tag.get("href"),
+            "img_url": img_tag.get("src")
+        })
+
+    # pagination
+    max_page = 1
+    pagination = soup.select_one("div.pagination")
+    if pagination:
+        pages = pagination.select("a.page-numbers")
+        numbers = []
+        for a in pages:
+            text = a.get_text(strip=True)
+            if text.isdigit():
+                numbers.append(int(text))
+        if numbers:
+            max_page = max(numbers)
+
+    return cards, max_page
+
 # =========================
 # API ROUTE (UNCHANGED)
 # =========================
@@ -51,6 +136,25 @@ def api_page(page):
     return jsonify({
         "cards": cards,
         "max_page": max_page
+    })
+# =========================
+# SEARCH API
+# =========================
+@app.route("/api/search")
+def api_search():
+    keyword = request.args.get("q")
+    page = int(request.args.get("page", 1))
+
+    if not keyword:
+        return jsonify({"error": "Missing search keyword"}), 400
+
+    cards, max_page = scrape_search(keyword, page)
+
+    return jsonify({
+        "cards": cards,
+        "current_page": page,
+        "max_page": max_page,
+        "keyword": keyword
     })
 
 # =========================
@@ -98,47 +202,6 @@ def home():
         current_page=page,
         max_page=max_page
     )
-
-# =========================
-# SCRAPE DETAILS PAGE (UNCHANGED)
-# =========================
-def scrape_details(url):
-    res = requests.get(url, headers=HEADERS, timeout=15)
-    res.raise_for_status()
-
-    soup = BeautifulSoup(res.text, "html.parser")
-    data = {}
-
-    desc = soup.select_one(".entry-content p")
-    data["description"] = desc.get_text(strip=True) if desc else ""
-
-    info = {}
-    for row in soup.select("table.infotable tr"):
-        tds = row.find_all("td")
-        if len(tds) == 2:
-            key = tds[0].get_text(strip=True).lower().replace(" ", "_")
-            value = tds[1].get_text(strip=True)
-            info[key] = value
-    data["info"] = info
-
-    data["genres"] = [a.get_text(strip=True) for a in soup.select(".seriestugenre a")]
-
-    chapters = []
-    for li in soup.select("#chapterlist li"):
-        a = li.select_one("a")
-        if not a:
-            continue
-        num = a.select_one(".chapternum")
-        date = a.select_one(".chapterdate")
-        title = (num.get_text(strip=True) if num else "")
-        date_text = (date.get_text(strip=True) if date else "")
-        chapters.append({
-            "title": f"{title} __ {date_text}".strip(),
-            "url": a.get("href")
-        })
-
-    data["chapters"] = chapters
-    return data
 
 
 # =========================

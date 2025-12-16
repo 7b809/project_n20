@@ -191,10 +191,11 @@ text-decoration: none;
     }
 }
 
+
 @media (max-width: 480px) {
-    .grid {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    }
+  .grid { grid-template-columns: repeat(3, 1fr); }
+
+
 
     .card img {
         height: 160px;

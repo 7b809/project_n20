@@ -4,42 +4,125 @@
     <meta charset="UTF-8" />
     <title>Manga Browser</title>
     <link rel="stylesheet" href="/static/style.css" />
+
+    <style>
+      /* 📌 Sticky search bar */
+      .search-container {
+        position: sticky;
+        top: 0;
+        background: #fff;
+        z-index: 100;
+        padding: 10px 0;
+      }
+
+      .search-bar {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+      }
+
+      .search-bar input {
+        width: 300px;
+        padding: 8px;
+      }
+
+      .clear-btn {
+        cursor: pointer;
+        padding: 0 10px;
+      }
+    </style>
   </head>
+
   <body>
     <h1>Manga List</h1>
 
-    <div id="grid" class="grid"></div>
+    <!-- 🔍 SEARCH BAR (ALWAYS ON TOP) -->
+    <div class="search-container">
+      <form id="searchForm" class="search-bar">
+        <input
+          type="text"
+          id="searchInput"
+          placeholder="Search manga..."
+          autocomplete="off"
+        />
+        <button type="submit">Search</button>
+        <button type="button" id="clearBtn" class="clear-btn">✕</button>
+      </form>
+    </div>
 
+    <div id="grid" class="grid"></div>
     <div id="pagination" class="pagination"></div>
 
     <script>
       const urlParams = new URLSearchParams(window.location.search);
+
       const currentPage = parseInt(urlParams.get("page") || "1");
-      const cacheKey = `manga_page_${currentPage}`;
+      const keyword = urlParams.get("q") || "";
+      const isSearch = keyword.length > 0;
+
+      const CACHE_TTL = 5 * 60 * 1000; // 🧠 5 minutes
 
       const grid = document.getElementById("grid");
       const pagination = document.getElementById("pagination");
+      const searchForm = document.getElementById("searchForm");
+      const searchInput = document.getElementById("searchInput");
+      const clearBtn = document.getElementById("clearBtn");
+
+      searchInput.value = keyword;
+
+      // ⏱ Debounce helper
+      function debounce(fn, delay) {
+        let timer;
+        return (...args) => {
+          clearTimeout(timer);
+          timer = setTimeout(() => fn(...args), delay);
+        };
+      }
+
+      // 🔍 Auto search on typing
+      const debouncedSearch = debounce(() => {
+        const q = searchInput.value.trim();
+        if (q) {
+          window.location.href = `/?q=${encodeURIComponent(q)}`;
+        }
+      }, 600);
+
+      searchInput.addEventListener("input", debouncedSearch);
+
+      // ❌ Clear search
+      clearBtn.addEventListener("click", () => {
+        searchInput.value = "";
+        window.location.href = "/";
+      });
+
+      searchForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const q = searchInput.value.trim();
+        window.location.href = q ? `/?q=${encodeURIComponent(q)}` : "/";
+      });
 
       function renderCards(cards) {
         grid.innerHTML = "";
+
+        if (!cards.length) {
+          grid.innerHTML = "<p>No results found</p>";
+          return;
+        }
 
         cards.forEach((item) => {
           const card = document.createElement("div");
           card.className = "card";
 
-          const encodedUrl = encodeURIComponent(item.url);
-
           card.innerHTML = `
-    <a href="/details?relation=${encodeURIComponent(
-      item.relation
-    )}&url=${encodeURIComponent(item.url)}&img_url=${encodeURIComponent(
+            <a href="/details?relation=${encodeURIComponent(
+              item.relation || ""
+            )}&url=${encodeURIComponent(item.url)}&img_url=${encodeURIComponent(
             item.img_url
           )}&title=${encodeURIComponent(item.title)}">
-        <img src="${item.img_url}" alt="${item.title}">
-        <h3>${item.title}</h3>
-    </a>
-`;
-
+              <img src="${item.img_url}" alt="${item.title}">
+              <h3>${item.title}</h3>
+            </a>
+          `;
           grid.appendChild(card);
         });
       }
@@ -55,26 +138,53 @@
             p > max - 2 ||
             (p >= current - 2 && p <= current + 2)
           ) {
-            pagination.innerHTML += `<a href="/?page=${p}">${p}</a>`;
-          } else if (p === 6) {
-            pagination.innerHTML += `<span class="dots">...</span>`;
+            const link = isSearch
+              ? `/?q=${encodeURIComponent(keyword)}&page=${p}`
+              : `/?page=${p}`;
+            pagination.innerHTML += `<a href="${link}">${p}</a>`;
           }
         }
       }
 
+      function getCache(key) {
+        const raw = localStorage.getItem(key);
+        if (!raw) return null;
+
+        const parsed = JSON.parse(raw);
+        if (Date.now() - parsed.time > CACHE_TTL) {
+          localStorage.removeItem(key);
+          return null;
+        }
+        return parsed.data;
+      }
+
+      function setCache(key, data) {
+        localStorage.setItem(
+          key,
+          JSON.stringify({ time: Date.now(), data })
+        );
+      }
+
       async function loadPage() {
-        if (localStorage.getItem(cacheKey)) {
-          const cached = JSON.parse(localStorage.getItem(cacheKey));
+        const cacheKey = isSearch
+          ? `search_${keyword}_page_${currentPage}`
+          : `manga_page_${currentPage}`;
+
+        const cached = getCache(cacheKey);
+        if (cached) {
           renderCards(cached.cards);
           renderPagination(currentPage, cached.max_page);
           return;
         }
 
-        const res = await fetch(`/api/page/${currentPage}`);
+        const apiUrl = isSearch
+          ? `/api/search?q=${encodeURIComponent(keyword)}&page=${currentPage}`
+          : `/api/page/${currentPage}`;
+
+        const res = await fetch(apiUrl);
         const data = await res.json();
 
-        localStorage.setItem(cacheKey, JSON.stringify(data));
-
+        setCache(cacheKey, data);
         renderCards(data.cards);
         renderPagination(currentPage, data.max_page);
       }
