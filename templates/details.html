@@ -48,7 +48,7 @@
 
 .chapters-grid a{
   flex: 1;
-  font-size: 18px;
+  font-size: 18px;             /* ⬆ increased */
   line-height: 1.6;
   word-break: break-word;
   white-space: normal;
@@ -57,6 +57,7 @@
   margin-right: 12px;
 }
 
+/* GO BUTTON */
 .chapters-grid .show-btn{
   flex-shrink: 0;
   padding: 10px 16px;
@@ -64,8 +65,8 @@
   border-radius: 6px;
   cursor: pointer;
   border: none;
-  background: #1faa59;
-  color: #fff;
+  background: #1faa59;         /* green */
+  color: #fff;                 /* white text */
 }
 
 /* ================= PROGRESS BAR ================= */
@@ -97,6 +98,7 @@
 
 <body>
 
+<!-- 🔼🔽 SCROLL CONTROLS -->
 <div id="scroll-controls">
   <button id="scroll-up">⬆</button>
   <button id="scroll-down">⬇</button>
@@ -140,6 +142,7 @@
 {% endfor %}
 </div>
 
+<!-- 📘 READER UI -->
 <h2 id="reader-title" style="display:none;"></h2>
 
 <div id="progress-wrapper">
@@ -147,10 +150,6 @@
 </div>
 
 <div id="page-counter"></div>
-
-<!-- 🔥 NEW: PRELOAD STATUS -->
-<div id="preload-status" style="padding:8px;font-size:14px;color:#555;"></div>
-
 <div id="reader"></div>
 
 <!-- ================= EXISTING JS (UNCHANGED) ================= -->
@@ -172,84 +171,20 @@ const reader = document.getElementById("reader");
 const counter = document.getElementById("page-counter");
 const readerTitle = document.getElementById("reader-title");
 const progressBar = document.getElementById("progress-bar");
-const preloadStatus = document.getElementById("preload-status");
 
 let chapterList = [...document.querySelectorAll(".show-btn")].map(b => b.dataset.chapterUrl);
 let currentChapterIndex = -1;
 let loading = false;
 
-/* ================= NEW: PRELOAD CONFIG ================= */
-const META_KEY = "chapter_meta";
-const BATCH_SIZE = 10;
-let preloadIndex = 0;
+/* ================= CORE ================= */
 
-/* ================= NEW: INIT ================= */
-document.addEventListener("DOMContentLoaded", async () => {
-  if(!localStorage.getItem(META_KEY)){
-    await fetchChapterMeta();
-  }
-  preloadNextBatch();
-});
-
-/* ================= NEW: META FETCH ================= */
-async function fetchChapterMeta(){
-  const meta = {};
-  preloadStatus.textContent = "Preparing chapters...";
-
-  for(const url of chapterList){
-    const res = await fetch(`/api/chapter-first-image?url=${encodeURIComponent(url)}`);
-    const data = await res.json();
-    if(data.base_url){
-      meta[url] = {
-        base: `${data.base_url}${data.folder_path}`,
-        ext: "jpg"
-      };
-    }
-  }
-
-  localStorage.setItem(META_KEY, JSON.stringify(meta));
-}
-
-/* ================= NEW: PRELOAD ================= */
-async function preloadNextBatch(){
-  const meta = JSON.parse(localStorage.getItem(META_KEY));
-  if(!meta) return;
-
-  const batch = chapterList.slice(preloadIndex, preloadIndex + BATCH_SIZE);
-  if(!batch.length) return;
-
-  preloadStatus.textContent =
-    `Preloading chapters ${preloadIndex + 1} – ${preloadIndex + batch.length}...`;
-
-  for(const chapterUrl of batch){
-    const cacheKey = `chapter_cache_${chapterUrl}`;
-    if(localStorage.getItem(cacheKey)) continue;
-
-    const imgs = [];
-    const m = meta[chapterUrl];
-    if(!m) continue;
-
-    for(let i=1;i<=300;i++){
-      const num = String(i).padStart(3,"0");
-      const url = `${m.base}/${num}.${m.ext}`;
-      if(!(await exists(url))) break;
-      imgs.push(url);
-    }
-
-    localStorage.setItem(cacheKey, JSON.stringify(imgs));
-  }
-
-  preloadIndex += BATCH_SIZE;
-  preloadStatus.textContent = `Chapters loaded: ${preloadIndex}`;
-}
-
-/* ================= CORE (UNCHANGED LOGIC) ================= */
-
+// GO button
 document.addEventListener("click", e => {
   if(e.target.classList.contains("show-btn")){
     startChapter(e.target.dataset.chapterUrl, true);
   }
 
+  // Chapter title click
   if(e.target.classList.contains("chapter-link")){
     e.preventDefault();
     startChapter(e.target.dataset.chapterUrl, true);
@@ -274,13 +209,32 @@ async function startChapter(chapterUrl, clear=true){
   let images = JSON.parse(localStorage.getItem(cacheKey));
 
   if(!images){
-    await preloadNextBatch();
-    images = JSON.parse(localStorage.getItem(cacheKey)) || [];
+    images = await fetchChapterImages(chapterUrl);
+    localStorage.setItem(cacheKey, JSON.stringify(images));
   }
 
   renderImages(images, chapterUrl);
   restoreProgress(chapterUrl);
   loading = false;
+}
+
+/* ================= IMAGE FETCH ================= */
+
+async function fetchChapterImages(chapterUrl){
+  const res = await fetch(`/api/chapter-first-image?url=${encodeURIComponent(chapterUrl)}`);
+  const data = await res.json();
+  if(!data.base_url) return [];
+
+  const base = `${data.base_url}${data.folder_path}`;
+  const imgs = [];
+
+  for(let i=1;i<=300;i++){
+    const num = String(i).padStart(3,"0");
+    const url = `${base}/${num}.jpg`;
+    if(!(await exists(url))) break;
+    imgs.push(url);
+  }
+  return imgs;
 }
 
 function exists(url){
@@ -291,6 +245,8 @@ function exists(url){
     i.src=url;
   });
 }
+
+/* ================= RENDER ================= */
 
 function renderImages(images, chapterUrl){
   images.forEach((src, idx)=>{
@@ -305,9 +261,12 @@ function renderImages(images, chapterUrl){
   trackScroll(chapterUrl, images.length);
 }
 
+/* ================= PAGE COUNTER + PROGRESS ================= */
+
 function updateCounter(page,total){
   counter.textContent = `Page ${page} / ${total}`;
-  progressBar.style.width = Math.round((page / total) * 100) + "%";
+  const percent = Math.round((page / total) * 100);
+  progressBar.style.width = percent + "%";
 }
 
 function trackScroll(chapterUrl,total){
@@ -322,13 +281,12 @@ function trackScroll(chapterUrl,total){
     });
 
     if(window.innerHeight + window.scrollY >= document.body.offsetHeight - 50){
-      if(currentChapterIndex + 3 >= preloadIndex){
-        preloadNextBatch();
-      }
       loadNextChapter();
     }
   };
 }
+
+/* ================= RESUME ================= */
 
 function restoreProgress(chapterUrl){
   const page = localStorage.getItem(`progress_${chapterUrl}`);
@@ -336,6 +294,8 @@ function restoreProgress(chapterUrl){
   const img = reader.querySelector(`img[data-index="${page}"]`);
   if(img) img.scrollIntoView();
 }
+
+/* ================= AUTO NEXT CHAPTER ================= */
 
 function loadNextChapter(){
   if(currentChapterIndex + 1 >= chapterList.length) return;
