@@ -1,12 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
-  <title>{{ title if title else "Manga Details" }}</title>
-  <link rel="stylesheet" href="/static/style.css" />
+<meta charset="UTF-8" />
+<title>{{ title if title else "Manga Details" }}</title>
+<link rel="stylesheet" href="/static/style.css" />
 
 <style>
-/* ================= SCROLL CONTROLS ================= */
 #scroll-controls{
   position: fixed;
   right: 20%;
@@ -29,7 +28,6 @@
   opacity: 0.85;
 }
 
-/* ================= CHAPTER LIST ================= */
 .chapters-grid{
   display: flex;
   flex-direction: column;
@@ -48,28 +46,14 @@
 
 .chapters-grid a{
   flex: 1;
-  font-size: 18px;             /* ⬆ increased */
+  font-size: 18px;
   line-height: 1.6;
   word-break: break-word;
   white-space: normal;
   text-decoration: none;
   color: #111;
-  margin-right: 12px;
 }
 
-/* GO BUTTON */
-.chapters-grid .show-btn{
-  flex-shrink: 0;
-  padding: 10px 16px;
-  font-size: 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  border: none;
-  background: #1faa59;         /* green */
-  color: #fff;                 /* white text */
-}
-
-/* ================= PROGRESS BAR ================= */
 #progress-wrapper{
   position: sticky;
   top: 0;
@@ -85,7 +69,17 @@
   transition: width 0.2s ease;
 }
 
-/* ================= READER ================= */
+#chapter-status{
+  position: sticky;
+  top: 40px;
+  z-index: 999;
+  background:#000;
+  color:#fff;
+  padding:8px 12px;
+  font-size:16px;
+  font-weight:bold;
+}
+
 #reader img{
   width: 100%;
   max-width: 100%;
@@ -98,7 +92,7 @@
 
 <body>
 
-<!-- 🔼🔽 SCROLL CONTROLS -->
+<!-- SCROLL -->
 <div id="scroll-controls">
   <button id="scroll-up">⬆</button>
   <button id="scroll-down">⬇</button>
@@ -108,52 +102,60 @@
 
 <h1 id="manga-title">{{ title if title else "Details" }}</h1>
 
-<div id="manga-image" class="manga-image">
-  {% if img_url %}
-  <img src="{{ img_url }}" alt="{{ title }}" style="max-width:300px;">
-  {% endif %}
+<div id="manga-image">
+{% if img_url %}
+  <img src="{{ img_url }}" style="max-width:300px;">
+{% endif %}
 </div>
 
-<p id="description">{{ data.description }}</p>
+<p>{{ data.description }}</p>
 
 <h2>Info</h2>
-<table id="info-table">
+<table>
 {% for k, v in data.info.items() %}
 <tr><th>{{ k.replace('_',' ').title() }}</th><td>{{ v }}</td></tr>
 {% endfor %}
 </table>
 
 <h2>Genres</h2>
-<div id="genres">
+<div>
 {% for g in data.genres %}
 <span class="genre">{{ g }}</span>
 {% endfor %}
 </div>
 
+<!-- 🚀 BULK READER ONLY -->
+<h2>Bulk Chapter Reader</h2>
+<div style="display:flex; gap:10px; margin-bottom:20px;">
+  <input id="start-ch" type="number" min="1" placeholder="Start Chapter No">
+  <input id="count-ch" type="number" min="1" placeholder="How many chapters?">
+  <button id="load-chapters-btn" style="padding:8px 14px;">Load</button>
+</div>
+
+<p style="font-size:14px;color:#555;">
+  Note: Chapter numbers are based on list order (top = 1)
+</p>
+
 <h2>Chapters</h2>
 <div class="chapters-grid">
 {% for ch in data.chapters | reverse %}
   <div>
-    <a href="{{ ch.url }}" class="chapter-link" data-chapter-url="{{ ch.url }}">
+    <a class="single-chapter" data-chapter-url="{{ ch.url }}">
       {{ ch.title }}
     </a>
-    <button class="show-btn" data-chapter-url="{{ ch.url }}">GO</button>
   </div>
 {% endfor %}
 </div>
 
-<!-- 📘 READER UI -->
 <h2 id="reader-title" style="display:none;"></h2>
 
-<div id="progress-wrapper">
-  <div id="progress-bar"></div>
-</div>
-
+<div id="progress-wrapper"><div id="progress-bar"></div></div>
+<div id="chapter-status">Chapter - Page</div>
 <div id="page-counter"></div>
 <div id="reader"></div>
 
-<!-- ================= EXISTING JS (UNCHANGED) ================= -->
 <script>
+/* CACHE BASIC */
 const relation = "{{ relation }}";
 const cacheKey = `manga_details_${relation}`;
 
@@ -163,65 +165,19 @@ if(!localStorage.getItem(cacheKey)){
     img_url:"{{ img_url }}"
   }));
 }
-</script>
 
-<!-- ================= 🔥 READER ENGINE ================= -->
-<script>
 const reader = document.getElementById("reader");
 const counter = document.getElementById("page-counter");
 const readerTitle = document.getElementById("reader-title");
 const progressBar = document.getElementById("progress-bar");
+const statusBar = document.getElementById("chapter-status");
 
-let chapterList = [...document.querySelectorAll(".show-btn")].map(b => b.dataset.chapterUrl);
-let currentChapterIndex = -1;
-let loading = false;
+let chapterList = [...document.querySelectorAll("[data-chapter-url]")]
+  .map(a => a.dataset.chapterUrl);
 
-/* ================= CORE ================= */
-
-// GO button
-document.addEventListener("click", e => {
-  if(e.target.classList.contains("show-btn")){
-    startChapter(e.target.dataset.chapterUrl, true);
-  }
-
-  // Chapter title click
-  if(e.target.classList.contains("chapter-link")){
-    e.preventDefault();
-    startChapter(e.target.dataset.chapterUrl, true);
-  }
-});
-
-async function startChapter(chapterUrl, clear=true){
-  if(loading) return;
-  loading = true;
-
-  if(clear){
-    reader.innerHTML = "";
-    window.scrollTo(0,0);
-    progressBar.style.width = "0%";
-  }
-
-  currentChapterIndex = chapterList.indexOf(chapterUrl);
-  readerTitle.style.display = "block";
-  readerTitle.textContent = `Reading Chapter ${currentChapterIndex + 1}`;
-
-  const cacheKey = `chapter_cache_${chapterUrl}`;
-  let images = JSON.parse(localStorage.getItem(cacheKey));
-
-  if(!images){
-    images = await fetchChapterImages(chapterUrl);
-    localStorage.setItem(cacheKey, JSON.stringify(images));
-  }
-
-  renderImages(images, chapterUrl);
-  restoreProgress(chapterUrl);
-  loading = false;
-}
-
-/* ================= IMAGE FETCH ================= */
-
-async function fetchChapterImages(chapterUrl){
-  const res = await fetch(`/api/chapter-first-image?url=${encodeURIComponent(chapterUrl)}`);
+/* FETCH IMAGES */
+async function fetchChapterImages(url){
+  const res = await fetch(`/api/chapter-first-image?url=${encodeURIComponent(url)}`);
   const data = await res.json();
   if(!data.base_url) return [];
 
@@ -230,9 +186,9 @@ async function fetchChapterImages(chapterUrl){
 
   for(let i=1;i<=300;i++){
     const num = String(i).padStart(3,"0");
-    const url = `${base}/${num}.jpg`;
-    if(!(await exists(url))) break;
-    imgs.push(url);
+    const img = `${base}/${num}.jpg`;
+    if(!(await exists(img))) break;
+    imgs.push(img);
   }
   return imgs;
 }
@@ -246,77 +202,113 @@ function exists(url){
   });
 }
 
-/* ================= RENDER ================= */
-
-function renderImages(images, chapterUrl){
-  images.forEach((src, idx)=>{
+/* RENDER */
+function renderImages(images, chapterNumber){
+  images.forEach((src,i)=>{
     const img = document.createElement("img");
     img.src = src;
+    img.dataset.page = i+1;
+    img.dataset.chapter = chapterNumber;
     img.loading = "lazy";
-    img.dataset.index = idx+1;
     reader.appendChild(img);
   });
-
-  updateCounter(1, images.length);
-  trackScroll(chapterUrl, images.length);
 }
 
-/* ================= PAGE COUNTER + PROGRESS ================= */
+/* ================= SINGLE CHAPTER CLICK ================= */
+document.addEventListener("click", async (e)=>{
+  const a = e.target.closest(".single-chapter");
+  if(!a) return;
 
-function updateCounter(page,total){
-  counter.textContent = `Page ${page} / ${total}`;
-  const percent = Math.round((page / total) * 100);
-  progressBar.style.width = percent + "%";
-}
+  const url = a.dataset.chapterUrl;
+  const chapterNumber = chapterList.indexOf(url) + 1;
 
-function trackScroll(chapterUrl,total){
-  window.onscroll = () => {
-    const imgs = reader.querySelectorAll("img");
-    imgs.forEach(img=>{
-      const rect = img.getBoundingClientRect();
-      if(rect.top >= 0 && rect.top < window.innerHeight / 2){
-        updateCounter(img.dataset.index, total);
-        localStorage.setItem(`progress_${chapterUrl}`, img.dataset.index);
-      }
-    });
+  reader.innerHTML="";
+  window.scrollTo(0,0);
+  progressBar.style.width="0%";
 
-    if(window.innerHeight + window.scrollY >= document.body.offsetHeight - 50){
-      loadNextChapter();
+  readerTitle.style.display="block";
+  readerTitle.textContent = `Reading Chapter ${chapterNumber}`;
+
+  let cache = JSON.parse(localStorage.getItem(`chapter_cache_${url}`));
+  if(!cache){
+    cache = await fetchChapterImages(url);
+    localStorage.setItem(`chapter_cache_${url}`, JSON.stringify(cache));
+  }
+
+  renderImages(cache, chapterNumber);
+});
+
+/* ================= VALIDATED BULK LOAD ================= */
+document.getElementById("load-chapters-btn").onclick = async () => {
+
+  const start = +document.getElementById("start-ch").value;
+  const count = +document.getElementById("count-ch").value;
+  const total = chapterList.length;
+
+  if(!start || !count){ alert("Please enter both Start and Count"); return; }
+  if(start < 1){ alert("Start chapter cannot be less than 1"); return; }
+  if(start > total){ alert(`Only ${total} chapters available. Start must be ≤ ${total}`); return; }
+  if(count < 1){ alert("Count must be at least 1"); return; }
+  if(start + count - 1 > total){
+    alert(`Requested range exceeds total.\nFrom chapter ${start}, maximum available = ${total - start + 1}`);
+    return;
+  }
+
+  const startIndex = start - 1;
+  const targets = chapterList.slice(startIndex, startIndex + count);
+
+  reader.innerHTML="";
+  window.scrollTo(0,0);
+  progressBar.style.width="0%";
+
+  readerTitle.style.display="block";
+  readerTitle.textContent =
+    `Reading chapters ${start} to ${start + targets.length - 1}`;
+
+  for(let i=0;i<targets.length;i++){
+    const url = targets[i];
+    const chapterNumber = start + i;
+
+    let cache = JSON.parse(localStorage.getItem(`chapter_cache_${url}`));
+    if(!cache){
+      cache = await fetchChapterImages(url);
+      localStorage.setItem(`chapter_cache_${url}`, JSON.stringify(cache));
     }
-  };
-}
 
-/* ================= RESUME ================= */
-
-function restoreProgress(chapterUrl){
-  const page = localStorage.getItem(`progress_${chapterUrl}`);
-  if(!page) return;
-  const img = reader.querySelector(`img[data-index="${page}"]`);
-  if(img) img.scrollIntoView();
-}
-
-/* ================= AUTO NEXT CHAPTER ================= */
-
-function loadNextChapter(){
-  if(currentChapterIndex + 1 >= chapterList.length) return;
-  startChapter(chapterList[currentChapterIndex + 1], false);
-}
-</script>
-
-<script>
-const upBtn = document.getElementById("scroll-up");
-const downBtn = document.getElementById("scroll-down");
-
-upBtn.onclick = () => {
-  const firstImg = document.querySelector("#reader img");
-  if(firstImg) firstImg.scrollIntoView({ behavior:"smooth", block:"start" });
+    renderImages(cache, chapterNumber);
+  }
 };
 
-downBtn.onclick = () => {
-  const imgs = document.querySelectorAll("#reader img");
-  if(imgs.length){
-    imgs[imgs.length - 1].scrollIntoView({ behavior:"smooth", block:"end" });
-  }
+/* PROGRESS + STATUS */
+window.onscroll = ()=>{
+  const imgs = reader.querySelectorAll("img");
+
+  imgs.forEach(img=>{
+    const rect = img.getBoundingClientRect();
+    if(rect.top>=0 && rect.top<window.innerHeight/2){
+
+      const page = img.dataset.page;
+      const chapter = img.dataset.chapter;
+
+      statusBar.textContent = `Chapter ${chapter} - Image ${page}`;
+      counter.textContent = `Page ${page}`;
+
+      progressBar.style.width =
+       Math.round((page/imgs.length)*100)+"%";
+    }
+  });
+};
+
+/* SCROLL BUTTONS */
+document.getElementById("scroll-up").onclick=()=>{
+  const first=document.querySelector("#reader img");
+  if(first) first.scrollIntoView({behavior:"smooth"});
+};
+
+document.getElementById("scroll-down").onclick=()=>{
+  const imgs=document.querySelectorAll("#reader img");
+  if(imgs.length)
+    imgs[imgs.length-1].scrollIntoView({behavior:"smooth"});
 };
 </script>
 
