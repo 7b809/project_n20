@@ -127,8 +127,10 @@
 <!-- 🚀 BULK READER ONLY -->
 <h2>Bulk Chapter Reader</h2>
 <div style="display:flex; gap:10px; margin-bottom:20px;">
-  <input id="start-ch" type="number" min="1" placeholder="Start Chapter No">
-  <input id="count-ch" type="number" min="1" placeholder="How many chapters?">
+  <select id="start-ch"></select>
+
+  <select id="count-ch"></select>
+
   <button id="load-chapters-btn" style="padding:8px 14px;">Load</button>
 </div>
 
@@ -174,6 +176,26 @@ const statusBar = document.getElementById("chapter-status");
 
 let chapterList = [...document.querySelectorAll("[data-chapter-url]")]
   .map(a => a.dataset.chapterUrl);
+
+/* ================= POPULATE DROPDOWNS ================= */
+const startSelect = document.getElementById("start-ch");
+const countSelect = document.getElementById("count-ch");
+
+// fill start chapter dropdown dynamically
+chapterList.forEach((_, i) => {
+  const opt = document.createElement("option");
+  opt.value = i + 1;
+  opt.textContent = `Chapter ${i + 1}`;
+  startSelect.appendChild(opt);
+});
+
+// fill count dropdown 1–10
+for(let i=1;i<=10;i++){
+  const opt = document.createElement("option");
+  opt.value = i;
+  opt.textContent = `${i} Chapter${i>1?"s":""}`;
+  countSelect.appendChild(opt);
+}
 
 /* FETCH IMAGES */
 async function fetchChapterImages(url){
@@ -241,14 +263,15 @@ document.addEventListener("click", async (e)=>{
 /* ================= VALIDATED BULK LOAD ================= */
 document.getElementById("load-chapters-btn").onclick = async () => {
 
-  const start = +document.getElementById("start-ch").value;
-  const count = +document.getElementById("count-ch").value;
+  const start = +startSelect.value;
+  const count = +countSelect.value;
   const total = chapterList.length;
 
-  if(!start || !count){ alert("Please enter both Start and Count"); return; }
-  if(start < 1){ alert("Start chapter cannot be less than 1"); return; }
-  if(start > total){ alert(`Only ${total} chapters available. Start must be ≤ ${total}`); return; }
-  if(count < 1){ alert("Count must be at least 1"); return; }
+  if(start > total){
+    alert(`Only ${total} chapters available`);
+    return;
+  }
+
   if(start + count - 1 > total){
     alert(`Requested range exceeds total.\nFrom chapter ${start}, maximum available = ${total - start + 1}`);
     return;
