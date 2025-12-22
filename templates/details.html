@@ -189,13 +189,25 @@ chapterList.forEach((_, i) => {
   startSelect.appendChild(opt);
 });
 
-// fill count dropdown 1–10
-for(let i=1;i<=10;i++){
+// ================= POPULATE COUNT DROPDOWN =================
+const totalChapters = chapterList.length;
+
+// 1–10 (step 1)
+for(let i = 1; i <= 10 && i <= totalChapters; i++){
   const opt = document.createElement("option");
   opt.value = i;
-  opt.textContent = `${i} Chapter${i>1?"s":""}`;
+  opt.textContent = `${i} Chapter${i > 1 ? "s" : ""}`;
   countSelect.appendChild(opt);
 }
+
+// 20, 30, 40, ... (step 10)
+for(let i = 20; i <= totalChapters; i += 10){
+  const opt = document.createElement("option");
+  opt.value = i;
+  opt.textContent = `${i} Chapters`;
+  countSelect.appendChild(opt);
+}
+
 
 /* FETCH IMAGES */
 async function fetchChapterImages(url){
@@ -313,8 +325,7 @@ window.onscroll = ()=>{
       const page = img.dataset.page;
       const chapter = img.dataset.chapter;
 
-      statusBar.textContent = `Chapter ${chapter} - Image ${page}`;
-      counter.textContent = `Page ${page}`;
+      statusBar.textContent = `Chapter ${chapter} - Image ${page}`;      counter.textContent = `Page ${page}`;
 
       progressBar.style.width =
        Math.round((page/imgs.length)*100)+"%";
