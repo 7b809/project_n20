@@ -1,0 +1,712 @@
+body{
+    background:#0b0d12;
+    color:white;
+    overflow-x:hidden;
+    font-family:
+        Inter,
+        system-ui,
+        sans-serif;
+}
+
+
+
+/* =========================
+   MAIN LAYOUT
+========================= */
+
+.container-fluid{
+    max-width:1600px;
+}
+
+
+
+/* =========================
+   NAVBAR
+========================= */
+
+.navbar{
+
+    background:
+        rgba(12,14,20,0.92);
+
+    backdrop-filter:blur(14px);
+
+    border-bottom:
+        1px solid rgba(255,255,255,0.05);
+
+    position:sticky;
+
+    top:0;
+
+    z-index:9999;
+}
+
+
+.navbar-brand{
+
+    font-size:22px;
+
+    letter-spacing:-0.5px;
+}
+
+
+
+/* =========================
+   SIDEBAR
+========================= */
+
+.sidebar-box{
+
+    position:sticky;
+
+    top:90px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #161922,
+            #10131a
+        );
+
+    padding:28px;
+
+    border-radius:24px;
+
+    border:
+        1px solid #2b3140;
+
+    box-shadow:
+        0 10px 40px rgba(0,0,0,0.35);
+}
+
+
+
+/* =========================
+   INPUTS
+========================= */
+
+.form-control{
+
+    background:#0f131b !important;
+
+    border:
+        1px solid #30384a !important;
+
+    color:white !important;
+
+    border-radius:14px;
+
+    min-height:55px;
+
+    font-size:15px;
+
+    box-shadow:none !important;
+}
+
+
+.form-control:focus{
+
+    border-color:#4f7cff !important;
+
+    background:#0f131b !important;
+
+    color:white !important;
+}
+
+
+.form-control::placeholder{
+    color:#7f8797;
+}
+
+
+
+/* =========================
+   PRIMARY BUTTON
+========================= */
+
+.btn-primary{
+
+    border:none;
+
+    border-radius:14px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #4f7cff,
+            #3562e3
+        );
+
+    min-height:55px;
+
+    font-weight:700;
+}
+
+
+.btn-primary:hover{
+
+    background:
+        linear-gradient(
+            135deg,
+            #6590ff,
+            #4f7cff
+        );
+}
+
+
+
+/* =========================
+   FEATURE ITEMS
+========================= */
+
+.feature-item{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    margin-bottom:12px;
+
+    color:#c7cfdd;
+
+    font-size:14px;
+}
+
+
+.feature-item i{
+    color:#5f8cff;
+}
+
+
+
+/* =========================
+   CHAPTER BUTTONS
+========================= */
+
+.chapter-btn{
+
+    border:none;
+
+    padding:10px 18px;
+
+    border-radius:14px;
+
+    background:#1c2330;
+
+    color:white;
+
+    transition:0.25s;
+
+    font-size:14px;
+
+    font-weight:600;
+}
+
+
+.chapter-btn:hover{
+
+    background:#2b3548;
+
+    transform:translateY(-2px);
+}
+
+
+
+/* =========================
+   READER WRAPPER
+========================= */
+
+.reader-wrapper{
+
+    background:
+        rgba(15,17,24,0.45);
+
+    border:
+        1px solid rgba(255,255,255,0.04);
+
+    border-radius:24px;
+
+    padding:24px;
+}
+
+
+
+/* =========================
+   READER TOPBAR
+========================= */
+
+.reader-topbar{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:24px;
+
+    gap:20px;
+}
+
+
+
+/* =========================
+   READER CONTAINER
+========================= */
+
+.reader-container{
+
+    max-width:950px;
+
+    margin:auto;
+}
+
+
+
+/* =========================
+   CHAPTER SECTION
+========================= */
+
+.chapter-section{
+
+    margin-bottom:70px;
+}
+
+
+
+/* =========================
+   CHAPTER HEADER
+========================= */
+
+.chapter-header{
+
+    position:sticky;
+
+    top:78px;
+
+    z-index:100;
+
+    padding:16px 20px;
+
+    margin-bottom:20px;
+
+    background:
+        rgba(15,17,24,0.85);
+
+    backdrop-filter:blur(12px);
+
+    border:
+        1px solid rgba(255,255,255,0.05);
+
+    border-radius:18px;
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+}
+
+
+.chapter-header h2{
+    margin:0;
+}
+
+
+
+/* =========================
+   IMAGE BOX
+========================= */
+
+.reader-image-box{
+
+    position:relative;
+
+    margin-bottom:14px;
+
+    border-radius:18px;
+
+    overflow:hidden;
+
+    background:#11151d;
+
+    border:
+        1px solid #1e2430;
+
+    min-height:400px;
+}
+
+
+
+/* =========================
+   IMAGES
+========================= */
+
+.reader-image{
+
+    width:100%;
+
+    height:auto;
+
+    display:block;
+
+    opacity:0;
+
+    transition:opacity 0.4s ease;
+
+    background:#0f131b;
+}
+
+
+
+/* =========================
+   IMAGE TOOLBAR
+========================= */
+
+.image-toolbar{
+
+    position:absolute;
+
+    top:12px;
+
+    right:12px;
+
+    display:flex;
+
+    gap:8px;
+
+    opacity:0;
+
+    transition:0.25s;
+}
+
+
+.reader-image-box:hover
+.image-toolbar{
+
+    opacity:1;
+}
+
+
+.image-toolbar .btn{
+
+    border-radius:12px;
+
+    padding:6px 12px;
+
+    font-size:12px;
+
+    font-weight:600;
+}
+
+
+
+/* =========================
+   LOADING PLACEHOLDER
+========================= */
+
+.loading-box{
+
+    width:100%;
+
+    height:450px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #161b24 25%,
+            #202736 50%,
+            #161b24 75%
+        );
+
+    background-size:200% 100%;
+
+    animation:skeleton 1.4s infinite;
+}
+
+
+@keyframes skeleton{
+
+    0%{
+        background-position:200% 0;
+    }
+
+    100%{
+        background-position:-200% 0;
+    }
+}
+
+
+
+/* =========================
+   FLOATING SCROLL BUTTON
+========================= */
+
+.scroll-top-btn{
+
+    position:fixed;
+
+    right:24px;
+
+    bottom:24px;
+
+    width:56px;
+
+    height:56px;
+
+    border:none;
+
+    border-radius:50%;
+
+    background:
+        linear-gradient(
+            135deg,
+            #4f7cff,
+            #3562e3
+        );
+
+    color:white;
+
+    font-size:22px;
+
+    z-index:9999;
+
+    opacity:0;
+
+    transition:0.25s;
+
+    box-shadow:
+        0 10px 30px rgba(0,0,0,0.4);
+}
+
+
+.scroll-top-btn:hover{
+
+    transform:translateY(-3px);
+}
+
+
+
+/* =========================
+   FLOATING CHAPTER NAV
+========================= */
+
+.floating-chapter-nav{
+
+    position:fixed;
+
+    bottom:25px;
+
+    left:50%;
+
+    transform:translateX(-50%);
+
+    display:flex;
+
+    gap:12px;
+
+    z-index:9999;
+}
+
+
+.floating-nav-btn{
+
+    border:none;
+
+    padding:14px 22px;
+
+    border-radius:18px;
+
+    background:
+        rgba(20,24,34,0.92);
+
+    color:white;
+
+    backdrop-filter:blur(12px);
+
+    border:
+        1px solid rgba(255,255,255,0.08);
+
+    box-shadow:
+        0 10px 35px rgba(0,0,0,0.4);
+
+    transition:0.25s;
+
+    font-weight:700;
+}
+
+
+.floating-nav-btn:hover{
+
+    transform:translateY(-3px);
+
+    background:#2d3750;
+}
+
+
+
+/* =========================
+   CUSTOM TOAST
+========================= */
+
+.custom-toast{
+
+    position:fixed;
+
+    bottom:100px;
+
+    right:24px;
+
+    background:#1f2937;
+
+    color:white;
+
+    padding:14px 20px;
+
+    border-radius:14px;
+
+    z-index:99999;
+
+    opacity:0;
+
+    transform:translateY(20px);
+
+    transition:0.3s;
+
+    border:
+        1px solid rgba(255,255,255,0.08);
+
+    box-shadow:
+        0 10px 30px rgba(0,0,0,0.4);
+}
+
+
+.custom-toast.show{
+
+    opacity:1;
+
+    transform:translateY(0);
+}
+
+
+
+/* =========================
+   SCROLLBAR
+========================= */
+
+::-webkit-scrollbar{
+    width:10px;
+}
+
+::-webkit-scrollbar-track{
+    background:#0f1115;
+}
+
+::-webkit-scrollbar-thumb{
+
+    background:#2a3242;
+
+    border-radius:20px;
+}
+
+::-webkit-scrollbar-thumb:hover{
+    background:#3b4558;
+}
+
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media(max-width:992px){
+
+    .sidebar-box{
+
+        position:relative;
+
+        top:0;
+    }
+
+    .reader-wrapper{
+        padding:16px;
+    }
+
+    .reader-topbar{
+
+        flex-direction:column;
+
+        align-items:flex-start;
+    }
+}
+
+
+@media(max-width:768px){
+
+    .sidebar-box{
+        padding:20px;
+    }
+
+    .chapter-header{
+
+        top:70px;
+
+        padding:14px;
+
+        flex-direction:column;
+
+        align-items:flex-start;
+
+        gap:6px;
+    }
+
+    .loading-box{
+        height:250px;
+    }
+
+    .image-toolbar{
+
+        opacity:1;
+
+        top:8px;
+        right:8px;
+    }
+
+    .chapter-btn{
+
+        padding:8px 14px;
+
+        font-size:13px;
+    }
+
+    .floating-chapter-nav{
+
+        bottom:15px;
+
+        width:92%;
+    }
+
+    .floating-nav-btn{
+
+        flex:1;
+
+        padding:12px 10px;
+
+        font-size:14px;
+    }
+
+    .scroll-top-btn{
+
+        width:48px;
+
+        height:48px;
+
+        font-size:18px;
+
+        right:16px;
+
+        bottom:90px;
+    }
+}

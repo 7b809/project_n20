@@ -1,0 +1,25 @@
+<div class="row g-4">
+
+{% for image in images %}
+
+<div class="col-lg-2 col-md-3 col-6">
+
+    <div class="image-card">
+
+        <img
+            src="{{ image }}"
+            class="img-fluid rounded"
+            loading="lazy"
+        >
+
+        <div class="small text-break mt-2">
+            {{ image }}
+        </div>
+
+    </div>
+
+</div>
+
+{% endfor %}
+
+</div>
