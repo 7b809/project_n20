@@ -1,431 +1,199 @@
 body{
     background:#0b0d12;
-    color:white;
+    color:#fff;
     overflow-x:hidden;
-    font-family:
-        Inter,
-        system-ui,
-        sans-serif;
+    font-family:Inter,system-ui,sans-serif;
 }
-
-
-
-/* =========================
-   MAIN LAYOUT
-========================= */
 
 .container-fluid{
     max-width:1600px;
 }
 
-
-
-/* =========================
-   NAVBAR
-========================= */
-
 .navbar{
-
-    background:
-        rgba(12,14,20,0.92);
-
+    background:rgba(12,14,20,.92);
     backdrop-filter:blur(14px);
-
-    border-bottom:
-        1px solid rgba(255,255,255,0.05);
-
+    border-bottom:1px solid rgba(255,255,255,.05);
     position:sticky;
-
     top:0;
-
     z-index:9999;
 }
 
-
 .navbar-brand{
-
     font-size:22px;
-
-    letter-spacing:-0.5px;
+    letter-spacing:-.5px;
 }
-
-
-
-/* =========================
-   SIDEBAR
-========================= */
 
 .sidebar-box{
-
     position:sticky;
-
     top:90px;
-
-    background:
-        linear-gradient(
-            145deg,
-            #161922,
-            #10131a
-        );
-
+    background:linear-gradient(145deg,#161922,#10131a);
     padding:28px;
-
     border-radius:24px;
-
-    border:
-        1px solid #2b3140;
-
-    box-shadow:
-        0 10px 40px rgba(0,0,0,0.35);
+    border:1px solid #2b3140;
+    box-shadow:0 10px 40px rgba(0,0,0,.35);
 }
-
-
-
-/* =========================
-   INPUTS
-========================= */
 
 .form-control{
-
-    background:#0f131b !important;
-
-    border:
-        1px solid #30384a !important;
-
-    color:white !important;
-
+    background:#0f131b!important;
+    border:1px solid #30384a!important;
+    color:#fff!important;
     border-radius:14px;
-
     min-height:55px;
-
     font-size:15px;
-
-    box-shadow:none !important;
+    box-shadow:none!important;
 }
-
 
 .form-control:focus{
-
-    border-color:#4f7cff !important;
-
-    background:#0f131b !important;
-
-    color:white !important;
+    border-color:#4f7cff!important;
+    background:#0f131b!important;
+    color:#fff!important;
 }
-
 
 .form-control::placeholder{
     color:#7f8797;
 }
 
-
-
-/* =========================
-   PRIMARY BUTTON
-========================= */
-
 .btn-primary{
-
     border:none;
-
     border-radius:14px;
-
-    background:
-        linear-gradient(
-            135deg,
-            #4f7cff,
-            #3562e3
-        );
-
+    background:linear-gradient(135deg,#4f7cff,#3562e3);
     min-height:55px;
-
     font-weight:700;
 }
 
-
 .btn-primary:hover{
-
-    background:
-        linear-gradient(
-            135deg,
-            #6590ff,
-            #4f7cff
-        );
+    background:linear-gradient(135deg,#6590ff,#4f7cff);
 }
-
-
-
-/* =========================
-   FEATURE ITEMS
-========================= */
 
 .feature-item{
-
     display:flex;
-
     align-items:center;
-
     gap:10px;
-
     margin-bottom:12px;
-
     color:#c7cfdd;
-
     font-size:14px;
 }
-
 
 .feature-item i{
     color:#5f8cff;
 }
 
-
-
-/* =========================
-   CHAPTER BUTTONS
-========================= */
-
 .chapter-btn{
-
     border:none;
-
     padding:10px 18px;
-
     border-radius:14px;
-
     background:#1c2330;
-
-    color:white;
-
-    transition:0.25s;
-
+    color:#fff;
+    transition:.25s;
     font-size:14px;
-
     font-weight:600;
 }
 
-
 .chapter-btn:hover{
-
     background:#2b3548;
-
     transform:translateY(-2px);
 }
 
-
-
-/* =========================
-   READER WRAPPER
-========================= */
+.active-page{
+    background:#4f7cff!important;
+}
 
 .reader-wrapper{
-
-    background:
-        rgba(15,17,24,0.45);
-
-    border:
-        1px solid rgba(255,255,255,0.04);
-
+    background:rgba(15,17,24,.45);
+    border:1px solid rgba(255,255,255,.04);
     border-radius:24px;
-
     padding:24px;
 }
 
-
-
-/* =========================
-   READER TOPBAR
-========================= */
-
 .reader-topbar{
-
     display:flex;
-
     justify-content:space-between;
-
     align-items:center;
-
     margin-bottom:24px;
-
     gap:20px;
 }
 
-
-
-/* =========================
-   READER CONTAINER
-========================= */
-
 .reader-container{
-
     max-width:950px;
-
     margin:auto;
 }
 
-
-
-/* =========================
-   CHAPTER SECTION
-========================= */
-
 .chapter-section{
-
     margin-bottom:70px;
 }
 
-
-
-/* =========================
-   CHAPTER HEADER
-========================= */
-
 .chapter-header{
-
     position:sticky;
-
     top:78px;
-
     z-index:100;
-
     padding:16px 20px;
-
     margin-bottom:20px;
-
-    background:
-        rgba(15,17,24,0.85);
-
+    background:rgba(15,17,24,.85);
     backdrop-filter:blur(12px);
-
-    border:
-        1px solid rgba(255,255,255,0.05);
-
+    border:1px solid rgba(255,255,255,.05);
     border-radius:18px;
-
     display:flex;
-
     justify-content:space-between;
-
     align-items:center;
 }
-
 
 .chapter-header h2{
     margin:0;
 }
 
-
-
-/* =========================
-   IMAGE BOX
-========================= */
-
 .reader-image-box{
-
     position:relative;
-
     margin-bottom:14px;
-
     border-radius:18px;
-
     overflow:hidden;
-
     background:#11151d;
-
-    border:
-        1px solid #1e2430;
-
+    border:1px solid #1e2430;
     min-height:400px;
 }
 
-
-
-/* =========================
-   IMAGES
-========================= */
-
 .reader-image{
-
     width:100%;
-
     height:auto;
-
     display:block;
-
     opacity:0;
-
-    transition:opacity 0.4s ease;
-
+    transition:opacity .4s ease;
     background:#0f131b;
+    object-fit:contain;
 }
 
-
-
-/* =========================
-   IMAGE TOOLBAR
-========================= */
-
 .image-toolbar{
-
     position:absolute;
-
     top:12px;
-
     right:12px;
-
     display:flex;
-
     gap:8px;
-
     opacity:0;
-
-    transition:0.25s;
+    transition:.25s;
 }
 
-
-.reader-image-box:hover
-.image-toolbar{
-
+.reader-image-box:hover .image-toolbar{
     opacity:1;
 }
 
-
 .image-toolbar .btn{
-
     border-radius:12px;
-
     padding:6px 12px;
-
     font-size:12px;
-
     font-weight:600;
 }
 
-
-
-/* =========================
-   LOADING PLACEHOLDER
-========================= */
-
 .loading-box{
-
     width:100%;
-
     height:450px;
-
-    background:
-        linear-gradient(
-            90deg,
-            #161b24 25%,
-            #202736 50%,
-            #161b24 75%
-        );
-
+    background:linear-gradient(
+        90deg,
+        #161b24 25%,
+        #202736 50%,
+        #161b24 75%
+    );
     background-size:200% 100%;
-
     animation:skeleton 1.4s infinite;
 }
-
 
 @keyframes skeleton{
 
@@ -438,163 +206,111 @@ body{
     }
 }
 
-
-
-/* =========================
-   FLOATING SCROLL BUTTON
-========================= */
-
 .scroll-top-btn{
-
     position:fixed;
-
     right:24px;
-
     bottom:24px;
-
     width:56px;
-
     height:56px;
-
     border:none;
-
     border-radius:50%;
-
-    background:
-        linear-gradient(
-            135deg,
-            #4f7cff,
-            #3562e3
-        );
-
-    color:white;
-
+    background:linear-gradient(135deg,#4f7cff,#3562e3);
+    color:#fff;
     font-size:22px;
-
     z-index:9999;
-
     opacity:0;
-
-    transition:0.25s;
-
-    box-shadow:
-        0 10px 30px rgba(0,0,0,0.4);
+    transition:.25s;
+    box-shadow:0 10px 30px rgba(0,0,0,.4);
 }
 
-
 .scroll-top-btn:hover{
-
     transform:translateY(-3px);
 }
 
-
-
-/* =========================
-   FLOATING CHAPTER NAV
-========================= */
-
 .floating-chapter-nav{
-
     position:fixed;
-
     bottom:25px;
-
     left:50%;
-
     transform:translateX(-50%);
-
     display:flex;
-
     gap:12px;
-
     z-index:9999;
 }
 
-
 .floating-nav-btn{
-
     border:none;
-
     padding:14px 22px;
-
     border-radius:18px;
-
-    background:
-        rgba(20,24,34,0.92);
-
-    color:white;
-
+    background:rgba(20,24,34,.92);
+    color:#fff;
     backdrop-filter:blur(12px);
-
-    border:
-        1px solid rgba(255,255,255,0.08);
-
-    box-shadow:
-        0 10px 35px rgba(0,0,0,0.4);
-
-    transition:0.25s;
-
+    border:1px solid rgba(255,255,255,.08);
+    box-shadow:0 10px 35px rgba(0,0,0,.4);
+    transition:.25s;
     font-weight:700;
 }
 
-
 .floating-nav-btn:hover{
-
     transform:translateY(-3px);
-
     background:#2d3750;
 }
 
-
-
-/* =========================
-   CUSTOM TOAST
-========================= */
-
 .custom-toast{
-
     position:fixed;
-
     bottom:100px;
-
     right:24px;
-
     background:#1f2937;
-
-    color:white;
-
+    color:#fff;
     padding:14px 20px;
-
     border-radius:14px;
-
     z-index:99999;
-
     opacity:0;
-
     transform:translateY(20px);
-
-    transition:0.3s;
-
-    border:
-        1px solid rgba(255,255,255,0.08);
-
-    box-shadow:
-        0 10px 30px rgba(0,0,0,0.4);
+    transition:.3s;
+    border:1px solid rgba(255,255,255,.08);
+    box-shadow:0 10px 30px rgba(0,0,0,.4);
 }
 
-
 .custom-toast.show{
-
     opacity:1;
-
     transform:translateY(0);
 }
 
+.manga-card{
+    background:#121722;
+    border:1px solid #222a38;
+    border-radius:20px;
+    overflow:hidden;
+    transition:.25s;
+    height:100%;
+}
 
+.manga-card:hover{
+    transform:translateY(-4px);
+    border-color:#4f7cff;
+}
 
-/* =========================
-   SCROLLBAR
-========================= */
+.manga-cover{
+    width:100%;
+    height:320px;
+    object-fit:cover;
+    display:block;
+    background:#0f131b;
+}
+
+.manga-title{
+    font-size:15px;
+    font-weight:700;
+    line-height:1.5;
+    margin-bottom:8px;
+    color:#fff;
+    min-height:48px;
+}
+
+.manga-status{
+    color:#8b95a7;
+    font-size:13px;
+}
 
 ::-webkit-scrollbar{
     width:10px;
@@ -605,9 +321,7 @@ body{
 }
 
 ::-webkit-scrollbar-thumb{
-
     background:#2a3242;
-
     border-radius:20px;
 }
 
@@ -615,18 +329,10 @@ body{
     background:#3b4558;
 }
 
-
-
-/* =========================
-   MOBILE
-========================= */
-
 @media(max-width:992px){
 
     .sidebar-box{
-
         position:relative;
-
         top:0;
     }
 
@@ -635,78 +341,140 @@ body{
     }
 
     .reader-topbar{
-
         flex-direction:column;
-
         align-items:flex-start;
     }
 }
 
-
 @media(max-width:768px){
 
+    .container-fluid{
+        padding-left:10px;
+        padding-right:10px;
+    }
+
+    .row{
+        --bs-gutter-x:12px;
+        --bs-gutter-y:12px;
+    }
+
     .sidebar-box{
-        padding:20px;
+        padding:18px;
+        border-radius:18px;
+    }
+
+    .reader-wrapper{
+        padding:14px;
+        border-radius:18px;
+    }
+
+    .reader-topbar{
+        flex-direction:column;
+        align-items:flex-start;
+        gap:10px;
+        margin-bottom:18px;
     }
 
     .chapter-header{
-
         top:70px;
-
-        padding:14px;
-
+        padding:12px;
         flex-direction:column;
-
         align-items:flex-start;
+        gap:8px;
+    }
 
-        gap:6px;
+    .chapter-header h2{
+        font-size:18px;
     }
 
     .loading-box{
-        height:250px;
+        height:220px;
     }
 
     .image-toolbar{
-
         opacity:1;
-
         top:8px;
         right:8px;
     }
 
     .chapter-btn{
-
-        padding:8px 14px;
-
-        font-size:13px;
+        padding:8px 12px;
+        font-size:12px;
     }
 
     .floating-chapter-nav{
-
         bottom:15px;
-
         width:92%;
     }
 
     .floating-nav-btn{
-
         flex:1;
-
         padding:12px 10px;
-
-        font-size:14px;
+        font-size:13px;
     }
 
     .scroll-top-btn{
-
-        width:48px;
-
-        height:48px;
-
+        width:46px;
+        height:46px;
         font-size:18px;
-
-        right:16px;
-
+        right:14px;
         bottom:90px;
+    }
+
+    .manga-card{
+        border-radius:16px;
+        overflow:hidden;
+    }
+
+    .manga-cover{
+        width:100%;
+        height:220px;
+        object-fit:contain;
+        background:#0f131b;
+    }
+
+    .manga-title{
+        font-size:13px;
+        line-height:1.4;
+        min-height:38px;
+        margin-bottom:6px;
+    }
+
+    .manga-status{
+        font-size:11px;
+    }
+
+    .manga-card .p-3{
+        padding:12px!important;
+    }
+
+    .manga-card .btn{
+        min-height:42px;
+        font-size:12px;
+        border-radius:10px;
+    }
+
+    .reader-image-box{
+        min-height:auto;
+        border-radius:14px;
+    }
+
+    .reader-image{
+        width:100%;
+        height:auto;
+        object-fit:contain;
+    }
+
+    .image-toolbar .btn{
+        padding:5px 10px;
+        font-size:11px;
+    }
+
+    #mangaGrid .col-xl-3,
+    #mangaGrid .col-lg-4,
+    #mangaGrid .col-md-6,
+    #mangaGrid .col-12{
+        width:50%;
+        flex:0 0 auto;
     }
 }

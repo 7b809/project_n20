@@ -1,64 +1,327 @@
 const form = document.getElementById("loadForm");
+const mangaGrid = document.getElementById("mangaGrid");
+const refreshBtn = document.getElementById("refreshBtn");
+const paginationContainer = document.getElementById("paginationContainer");
 
-const viewerContainer =
-    document.getElementById("viewerContainer");
-
-const chapterButtons =
-    document.getElementById("chapterButtons");
-
-const prevChapterBtn =
-    document.getElementById(
-        "prevChapterBtn"
-    );
-
-const nextChapterBtn =
-    document.getElementById(
-        "nextChapterBtn"
-    );
-
-
+const viewerContainer = document.getElementById("viewerContainer");
+const chapterButtons = document.getElementById("chapterButtons");
+const prevChapterBtn = document.getElementById("prevChapterBtn");
+const nextChapterBtn = document.getElementById("nextChapterBtn");
+const reloadBtn = document.getElementById("reloadBtn");
 
 let currentUrl = "";
-
 let currentChapter = 1;
-
+let currentPage = 1;
 let isLoading = false;
-
 let loadedChapters = new Set();
-
 let chapterObserver = null;
 
+window.onload = () => {
 
+    initializeDashboard();
+    initializeViewer();
+};
 
+function initializeDashboard() {
 
-
-/* =========================
-   INITIAL BUTTON STATE
-========================= */
-
-prevChapterBtn.style.display = "none";
-
-nextChapterBtn.style.display = "none";
-
-
-
-
-
-/* =========================
-   LOAD CHAPTER
-========================= */
-
-async function loadChapter(chapter){
-
-    if(!currentUrl){
+    if (!mangaGrid) {
         return;
     }
 
-    if(isLoading){
+    loadHomepage();
+
+    if (refreshBtn) {
+
+        refreshBtn.onclick = () => {
+            loadHomepage(currentPage);
+        };
+    }
+
+    if (form) {
+
+        form.addEventListener("submit", (e) => {
+
+            e.preventDefault();
+
+            const url =
+                document.getElementById("url")
+                    .value
+                    .trim();
+
+            if (!url) {
+                return;
+            }
+
+            window.location.href =
+                `/viewer?url=${encodeURIComponent(url)}`;
+        });
+    }
+}
+
+function initializeViewer() {
+
+    if (!viewerContainer) {
         return;
     }
 
-    if(loadedChapters.has(chapter)){
+    currentUrl =
+        document.getElementById("url")
+            ?.value
+            ?.trim() || "";
+
+    if (prevChapterBtn) {
+        prevChapterBtn.style.display = "none";
+    }
+
+    if (nextChapterBtn) {
+        nextChapterBtn.style.display = "none";
+    }
+
+    if (reloadBtn) {
+
+        reloadBtn.onclick = () => {
+
+            currentUrl =
+                document.getElementById("url")
+                    .value
+                    .trim();
+
+            currentChapter = parseInt(
+                document.getElementById("chapter")
+                    .value
+            );
+
+            viewerContainer.innerHTML = "";
+            chapterButtons.innerHTML = "";
+
+            loadedChapters.clear();
+
+            loadChapter(currentChapter);
+        };
+    }
+
+    if (currentUrl) {
+        loadChapter(1);
+    }
+
+    initializeInfiniteScroll();
+    initializeKeyboardNavigation();
+}
+
+async function loadHomepage(page = 1) {
+
+    currentPage = page;
+
+    mangaGrid.innerHTML = `
+        <div class="col-12 text-center py-5">
+
+            <div class="spinner-border text-light"></div>
+
+            <div class="mt-3 text-secondary">
+                Loading Manga Dashboard...
+            </div>
+
+        </div>
+    `;
+
+    try {
+
+        const response =
+            await fetch(
+                `/api/home?page=${page}`
+            );
+
+        const data =
+            await response.json();
+
+        if (!data.success) {
+
+            mangaGrid.innerHTML = `
+                <div class="alert alert-danger">
+                    Failed To Load Homepage
+                </div>
+            `;
+
+            return;
+        }
+
+        renderMangaCards(data.data);
+
+        renderPagination(
+            data.max_pagination,
+            page
+        );
+
+    } catch (error) {
+
+        mangaGrid.innerHTML = `
+            <div class="alert alert-danger">
+                ${error}
+            </div>
+        `;
+    }
+}
+
+function renderMangaCards(items) {
+
+    mangaGrid.innerHTML = "";
+
+    items.forEach((item) => {
+
+        const chapterUrl =
+            item.chapters?.[0]?.chapter_url || "";
+
+        const chapterTitle =
+            item.chapters?.[0]?.chapter_title || "Read";
+
+        mangaGrid.innerHTML += `
+            <div class="col-xl-3 col-lg-4 col-md-6 col-12">
+
+                <div class="manga-card">
+
+                    <img
+                        src="${item.image_url}"
+                        class="manga-cover"
+                        loading="lazy"
+                    >
+
+                    <div class="p-3">
+
+                        <div class="manga-title">
+                            ${item.title}
+                        </div>
+
+                        <div class="manga-status">
+                            ${item.status}
+                        </div>
+
+                        <button
+                            class="btn btn-primary w-100 mt-3"
+                            onclick="openManga('${chapterUrl}')"
+                        >
+                            ${chapterTitle}
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+        `;
+    });
+}
+
+function renderPagination(max, current) {
+
+    if (!paginationContainer) {
+        return;
+    }
+
+    paginationContainer.innerHTML = "";
+
+    let pages = [];
+
+    // FIRST 3
+
+    for (let i = 1; i <= 3; i++) {
+
+        if (i <= max) {
+            pages.push(i);
+        }
+    }
+
+    // LEFT DOTS
+
+    if (current > 5) {
+        pages.push("...");
+    }
+
+    // CURRENT AREA
+
+    for (
+        let i = current - 1;
+        i <= current + 1;
+        i++
+    ) {
+
+        if (
+            i > 3 &&
+            i < max - 2
+        ) {
+            pages.push(i);
+        }
+    }
+
+    // RIGHT DOTS
+
+    if (current < max - 4) {
+        pages.push("...");
+    }
+
+    // LAST 3
+
+    for (
+        let i = max - 2;
+        i <= max;
+        i++
+    ) {
+
+        if (i > 3) {
+            pages.push(i);
+        }
+    }
+
+    pages = [...new Set(pages)];
+
+    pages.forEach((page) => {
+
+        if (page === "...") {
+
+            paginationContainer.innerHTML += `
+                <div class="chapter-btn">
+                    ...
+                </div>
+            `;
+
+            return;
+        }
+
+        paginationContainer.innerHTML += `
+            <button
+                class="chapter-btn ${page === current
+                ? "active-page"
+                : ""
+            }"
+                onclick="loadHomepage(${page})"
+            >
+                ${page}
+            </button>
+        `;
+    });
+}
+
+function openManga(url) {
+
+    if (!url) {
+
+        showToast(
+            "No chapter URL found"
+        );
+
+        return;
+    }
+
+    window.location.href =
+        `/viewer?url=${encodeURIComponent(url)}`;
+}
+
+async function loadChapter(chapter) {
+
+    if (
+        !currentUrl ||
+        isLoading ||
+        loadedChapters.has(chapter)
+    ) {
         return;
     }
 
@@ -66,78 +329,70 @@ async function loadChapter(chapter){
 
     currentChapter = chapter;
 
+    if (prevChapterBtn) {
+        prevChapterBtn.style.display = "flex";
+    }
 
-
-    /* show nav buttons */
-
-    prevChapterBtn.style.display = "flex";
-
-    nextChapterBtn.style.display = "flex";
-
-
-
-    updateFloatingButtons();
-
-
+    if (nextChapterBtn) {
+        nextChapterBtn.style.display = "flex";
+    }
 
     const limit =
-        document.getElementById("limit").value;
+        document.getElementById("limit")
+            ?.value || 50;
 
     const formData = new FormData();
 
-    formData.append("url", currentUrl);
+    formData.append(
+        "url",
+        currentUrl
+    );
 
-    formData.append("chapter", chapter);
+    formData.append(
+        "chapter",
+        chapter
+    );
 
-    formData.append("limit", limit);
+    formData.append(
+        "limit",
+        limit
+    );
 
+    viewerContainer.insertAdjacentHTML(
+        "beforeend",
+        `
+        <div class="text-center py-5 chapter-loading">
 
+            <div class="spinner-border text-light"></div>
 
-    const loadingHtml = `
-        <div
-            class="text-center py-5 chapter-loading"
-        >
-
-            <div
-                class="spinner-border text-light"
-            ></div>
-
-            <div
-                class="mt-3 text-secondary"
-            >
+            <div class="mt-3 text-secondary">
                 Loading Chapter ${chapter}
             </div>
 
         </div>
-    `;
-
-
-
-    viewerContainer.insertAdjacentHTML(
-        "beforeend",
-        loadingHtml
+        `
     );
 
+    try {
 
+        const response =
+            await fetch("/load", {
+                method: "POST",
+                body: formData
+            });
 
-    try{
-
-        const response = await fetch("/load",{
-            method:"POST",
-            body:formData
-        });
-
-        const data = await response.json();
-
-
+        const data =
+            await response.json();
 
         document
-            .querySelectorAll(".chapter-loading")
-            .forEach((el)=>el.remove());
+            .querySelectorAll(
+                ".chapter-loading"
+            )
+            .forEach((el) => {
+                el.remove();
+            });
 
-
-
-        if(!data.success){
+        if (!data.success) {
 
             viewerContainer.insertAdjacentHTML(
                 "beforeend",
@@ -153,9 +408,7 @@ async function loadChapter(chapter){
             return;
         }
 
-
-
-        if(data.images.length === 0){
+        if (data.images.length === 0) {
 
             showToast(
                 `No images found for chapter ${chapter}`
@@ -166,16 +419,11 @@ async function loadChapter(chapter){
             return;
         }
 
-
-
         loadedChapters.add(chapter);
 
         addChapterButton(chapter);
 
-
-
         let html = `
-
             <div
                 class="chapter-section"
                 id="chapter-section-${chapter}"
@@ -191,14 +439,10 @@ async function loadChapter(chapter){
                         </h2>
 
                         <div class="text-secondary small">
-
-                            ${data.images.length}
-                            Images Loaded
-
+                            ${data.images.length} Images Loaded
                         </div>
 
                     </div>
-
 
                     <div class="d-flex gap-2">
 
@@ -221,87 +465,70 @@ async function loadChapter(chapter){
                 </div>
         `;
 
-
-
-        data.images.forEach((img,index)=>{
+        data.images.forEach((img, index) => {
 
             html += `
+                <div class="reader-image-box">
 
-            <div class="reader-image-box">
+                    <div class="loading-box"></div>
 
-                <div class="loading-box"></div>
-
-                <img
-                    class="reader-image lazy-image"
-                    data-src="${img}"
-                    loading="lazy"
-                    alt="chapter-${chapter}-${index}"
-                >
-
-
-                <div class="image-toolbar">
-
-                    <button
-                        class="btn btn-sm btn-primary"
-                        onclick="copyImageUrl('${img}')"
+                    <img
+                        class="reader-image lazy-image"
+                        data-src="${img}"
+                        loading="lazy"
+                        alt="chapter-${chapter}-${index}"
                     >
-                        Copy
-                    </button>
 
+                    <div class="image-toolbar">
 
-                    <a
-                        href="${img}"
-                        target="_blank"
-                        class="btn btn-sm btn-dark"
-                    >
-                        Open
-                    </a>
+                        <button
+                            class="btn btn-sm btn-primary"
+                            onclick="copyImageUrl('${img}')"
+                        >
+                            Copy
+                        </button>
+
+                        <a
+                            href="${img}"
+                            target="_blank"
+                            class="btn btn-sm btn-dark"
+                        >
+                            Open
+                        </a>
+
+                    </div>
 
                 </div>
-
-            </div>
             `;
         });
 
-
-
         html += `</div>`;
-
 
         viewerContainer.insertAdjacentHTML(
             "beforeend",
             html
         );
 
-
-
         initializeLazyLoading();
-
         observeChapterSections();
 
-
-
-        if(data.images.length > 0){
-
+        if (data.images.length > 0) {
             addChapterButton(chapter + 1);
         }
 
-
-
-        highlightActiveChapterButton(
-            chapter
-        );
-
-
+        highlightActiveChapterButton(chapter);
 
         isLoading = false;
 
-    }
-    catch(error){
+    } catch (error) {
 
         document
-            .querySelectorAll(".chapter-loading")
-            .forEach((el)=>el.remove());
+            .querySelectorAll(
+                ".chapter-loading"
+            )
+            .forEach((el) => {
+                el.remove();
+            });
 
         viewerContainer.insertAdjacentHTML(
             "beforeend",
@@ -316,103 +543,66 @@ async function loadChapter(chapter){
     }
 }
 
-
-
-
-
-/* =========================
-   LAZY IMAGE LOADING
-========================= */
-
-function initializeLazyLoading(){
+function initializeLazyLoading() {
 
     const lazyImages =
         document.querySelectorAll(
             ".lazy-image:not(.loaded)"
         );
 
-
-
     const observer =
-        new IntersectionObserver((entries)=>{
+        new IntersectionObserver((entries) => {
 
-        entries.forEach((entry)=>{
+            entries.forEach((entry) => {
 
-            const img = entry.target;
+                const img = entry.target;
 
+                if (entry.isIntersecting) {
 
-
-            if(entry.isIntersecting){
-
-                if(!img.src){
-
-                    img.src = img.dataset.src;
-                }
-
-                img.classList.add("loaded");
-
-
-
-                img.onload = ()=>{
-
-                    img.style.opacity = "1";
-
-                    const loader =
-                        img.previousElementSibling;
-
-                    if(loader){
-                        loader.remove();
+                    if (!img.src) {
+                        img.src = img.dataset.src;
                     }
-                };
 
+                    img.classList.add("loaded");
 
+                    img.onload = () => {
 
-                img.onerror = ()=>{
+                        img.style.opacity = "1";
 
-                    img.parentElement.remove();
-                };
+                        const loader =
+                            img.previousElementSibling;
 
-            }
+                        if (loader) {
+                            loader.remove();
+                        }
+                    };
 
+                    img.onerror = () => {
+                        img.parentElement.remove();
+                    };
+                }
+            });
+
+        }, {
+            rootMargin: "1200px"
         });
 
-    },{
-        rootMargin:"1200px"
-    });
-
-
-
-    lazyImages.forEach((img)=>{
-
+    lazyImages.forEach((img) => {
         observer.observe(img);
     });
 }
 
+function addChapterButton(chapter) {
 
-
-
-
-/* =========================
-   CHAPTER BUTTONS
-========================= */
-
-function addChapterButton(chapter){
-
-    if(chapter <= 0){
-        return;
-    }
-
-
-
-    if(
+    if (
+        !chapterButtons ||
+        chapter <= 0 ||
         document.getElementById(
             `chapter-${chapter}`
         )
-    ){
+    ) {
         return;
     }
-
-
 
     const btn =
         document.createElement("button");
@@ -423,231 +613,119 @@ function addChapterButton(chapter){
 
     btn.innerText = `Chapter ${chapter}`;
 
-
-
-    btn.onclick = ()=>{
-
+    btn.onclick = () => {
         goToChapter(chapter);
     };
-
-
 
     chapterButtons.appendChild(btn);
 }
 
+async function goToChapter(chapter) {
 
-
-
-
-/* =========================
-   GO TO CHAPTER
-========================= */
-
-async function goToChapter(chapter){
-
-    if(chapter <= 0){
+    if (chapter <= 0 || !currentUrl) {
         return;
     }
-
-    if(!currentUrl){
-        return;
-    }
-
-
 
     currentChapter = chapter;
-
-    updateFloatingButtons();
-
-
 
     const existingSection =
         document.getElementById(
             `chapter-section-${chapter}`
         );
 
-
-
-    if(existingSection){
+    if (existingSection) {
 
         existingSection.scrollIntoView({
-            behavior:"smooth"
+            behavior: "smooth"
         });
 
         return;
     }
 
-
-
     await loadChapter(chapter);
 
-
-
-    setTimeout(()=>{
+    setTimeout(() => {
 
         const newSection =
             document.getElementById(
                 `chapter-section-${chapter}`
             );
 
-        if(newSection){
+        if (newSection) {
 
             newSection.scrollIntoView({
-                behavior:"smooth"
+                behavior: "smooth"
             });
         }
 
-    },500);
+    }, 500);
 }
 
+function observeChapterSections() {
 
-
-
-
-/* =========================
-   FLOATING NAVIGATION
-========================= */
-
-function updateFloatingButtons(){
-
-    prevChapterBtn.innerHTML = `
-        <i class="bi bi-arrow-left"></i>
-        Prev
-    `;
-
-    nextChapterBtn.innerHTML = `
-        Next
-        <i class="bi bi-arrow-right"></i>
-    `;
-}
-
-
-
-prevChapterBtn.onclick = ()=>{
-
-    goToChapter(currentChapter - 1);
-};
-
-
-
-nextChapterBtn.onclick = ()=>{
-
-    goToChapter(currentChapter + 1);
-};
-
-
-
-
-
-/* =========================
-   OBSERVE CHAPTERS
-========================= */
-
-function observeChapterSections(){
-
-    if(chapterObserver){
-
+    if (chapterObserver) {
         chapterObserver.disconnect();
     }
-
-
 
     const sections =
         document.querySelectorAll(
             ".chapter-section"
         );
 
-
-
     chapterObserver =
-        new IntersectionObserver((entries)=>{
+        new IntersectionObserver((entries) => {
 
-        entries.forEach((entry)=>{
+            entries.forEach((entry) => {
 
-            if(entry.isIntersecting){
+                if (entry.isIntersecting) {
 
-                const chapter =
-                    parseInt(
-                        entry.target.dataset.chapter
+                    const chapter =
+                        parseInt(
+                            entry.target.dataset.chapter
+                        );
+
+                    currentChapter = chapter;
+
+                    highlightActiveChapterButton(
+                        chapter
                     );
+                }
+            });
 
-                currentChapter = chapter;
-
-                highlightActiveChapterButton(
-                    chapter
-                );
-            }
+        }, {
+            threshold: 0.4
         });
 
-    },{
-        threshold:0.4
-    });
-
-
-
-    sections.forEach((section)=>{
-
+    sections.forEach((section) => {
         chapterObserver.observe(section);
     });
 }
 
-
-
-
-
-/* =========================
-   ACTIVE BUTTON
-========================= */
-
-function highlightActiveChapterButton(chapter){
+function highlightActiveChapterButton(chapter) {
 
     document
         .querySelectorAll(".chapter-btn")
-        .forEach((btn)=>{
-
-            btn.style.background =
-                "#1c2330";
+        .forEach((btn) => {
+            btn.style.background = "#1c2330";
         });
-
-
 
     const activeBtn =
         document.getElementById(
             `chapter-${chapter}`
         );
 
-
-
-    if(activeBtn){
-
-        activeBtn.style.background =
-            "#4f7cff";
+    if (activeBtn) {
+        activeBtn.style.background = "#4f7cff";
     }
 }
 
+function initializeInfiniteScroll() {
 
+    window.addEventListener("scroll", () => {
 
-
-
-/* =========================
-   INFINITE SCROLL
-========================= */
-
-function initializeInfiniteScroll(){
-
-    window.addEventListener("scroll",()=>{
-
-        /* prevent startup bug */
-
-        if(!currentUrl){
+        if (!currentUrl || isLoading) {
             return;
         }
-
-        if(isLoading){
-            return;
-        }
-
-
 
         const scrollPosition =
             window.innerHeight +
@@ -656,39 +734,52 @@ function initializeInfiniteScroll(){
         const threshold =
             document.body.offsetHeight - 2500;
 
-
-
-        if(scrollPosition >= threshold){
-
+        if (scrollPosition >= threshold) {
             loadChapter(currentChapter + 1);
         }
     });
 }
 
+function initializeKeyboardNavigation() {
 
+    document.addEventListener("keydown", (e) => {
 
+        if (!currentUrl) {
+            return;
+        }
 
+        if (e.key === "ArrowRight") {
+            goToChapter(currentChapter + 1);
+        }
 
-/* =========================
-   COPY URL
-========================= */
+        if (e.key === "ArrowLeft") {
+            goToChapter(currentChapter - 1);
+        }
+    });
 
-function copyImageUrl(url){
+    if (prevChapterBtn) {
+
+        prevChapterBtn.onclick = () => {
+            goToChapter(currentChapter - 1);
+        };
+    }
+
+    if (nextChapterBtn) {
+
+        nextChapterBtn.onclick = () => {
+            goToChapter(currentChapter + 1);
+        };
+    }
+}
+
+function copyImageUrl(url) {
 
     navigator.clipboard.writeText(url);
 
     showToast("Copied URL");
 }
 
-
-
-
-
-/* =========================
-   TOAST
-========================= */
-
-function showToast(message){
+function showToast(message) {
 
     const toast =
         document.createElement("div");
@@ -699,102 +790,11 @@ function showToast(message){
 
     document.body.appendChild(toast);
 
-
-
-    setTimeout(()=>{
-
+    setTimeout(() => {
         toast.classList.add("show");
+    }, 100);
 
-    },100);
-
-
-
-    setTimeout(()=>{
-
+    setTimeout(() => {
         toast.remove();
-
-    },2500);
+    }, 2500);
 }
-
-
-
-
-
-/* =========================
-   KEYBOARD NAVIGATION
-========================= */
-
-document.addEventListener(
-    "keydown",
-    (e)=>{
-
-    if(!currentUrl){
-        return;
-    }
-
-    if(e.key === "ArrowRight"){
-
-        goToChapter(currentChapter + 1);
-    }
-
-    if(e.key === "ArrowLeft"){
-
-        goToChapter(currentChapter - 1);
-    }
-});
-
-
-
-
-
-/* =========================
-   FORM SUBMIT
-========================= */
-
-form.addEventListener("submit",(e)=>{
-
-    e.preventDefault();
-
-
-
-    currentUrl =
-        document.getElementById("url").value.trim();
-
-
-
-    if(!currentUrl){
-
-        showToast("Please enter URL");
-
-        return;
-    }
-
-
-
-    currentChapter =
-        parseInt(
-            document.getElementById("chapter").value
-        );
-
-
-
-    viewerContainer.innerHTML = "";
-
-    chapterButtons.innerHTML = "";
-
-    loadedChapters.clear();
-
-
-
-    loadChapter(currentChapter);
-});
-
-
-
-
-
-/* =========================
-   INITIALIZE
-========================= */
-
-initializeInfiniteScroll();

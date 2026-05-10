@@ -1,13 +1,8 @@
 import logging
-import traceback
 import time
+import traceback
 
-from flask import (
-    Flask,
-    render_template,
-    request,
-    jsonify
-)
+from flask import Flask, jsonify, render_template, request
 
 from scraper import (
     get_html,
@@ -15,67 +10,37 @@ from scraper import (
     generate_chapter_images
 )
 
-
-
-# =========================================
-# FLASK APP
-# =========================================
+from manga_listing_scraper import get_page_data
 
 app = Flask(__name__)
 
-
-
-# =========================================
-# LOGGING SETUP
-# =========================================
-
 logging.basicConfig(
     level=logging.INFO,
-    format=(
-        "[%(asctime)s] "
-        "[%(levelname)s] "
-        "%(message)s"
-    )
+    format="[%(asctime)s] [%(levelname)s] %(message)s"
 )
 
 logger = logging.getLogger(__name__)
 
-
-
-# =========================================
-# BEFORE REQUEST LOGGER
-# =========================================
-
 @app.before_request
 def before_request():
-
     logger.info(
-        f"[REQUEST] "
-        f"{request.method} "
-        f"{request.path}"
+        f"[REQUEST] {request.method} {request.path}"
     )
 
-
-
-# =========================================
-# HOME PAGE
-# =========================================
-
-@app.route("/", methods=["GET"])
+@app.route("/")
 def home():
 
     try:
 
         logger.info(
-            "[HOME] "
-            "Rendering index page"
+            "[HOME] Rendering dashboard"
         )
 
         return render_template(
             "index.html"
         )
 
-    except Exception as e:
+    except Exception:
 
         logger.exception(
             "[HOME ERROR]"
@@ -86,11 +51,67 @@ def home():
             500
         )
 
+@app.route("/viewer")
+def viewer():
 
+    try:
 
-# =========================================
-# LOAD CHAPTER API
-# =========================================
+        url = request.args.get(
+            "url",
+            ""
+        )
+
+        logger.info(
+            f"[VIEWER] URL={url}"
+        )
+
+        return render_template(
+            "viewer.html",
+            url=url
+        )
+
+    except Exception:
+
+        logger.exception(
+            "[VIEWER ERROR]"
+        )
+
+        return (
+            "Viewer Error",
+            500
+        )
+
+@app.route("/api/home")
+def api_home():
+
+    try:
+
+        page = int(
+            request.args.get(
+                "page",
+                1
+            )
+        )
+
+        logger.info(
+            f"[HOME API] PAGE={page}"
+        )
+
+        data = get_page_data(page)
+
+        return jsonify(data)
+
+    except Exception as e:
+
+        logger.exception(
+            "[HOME API ERROR]"
+        )
+
+        return jsonify({
+            "success": False,
+            "message": "Failed to load homepage",
+            "error": str(e)
+        }), 500
 
 @app.route("/load", methods=["POST"])
 def load_chapter():
@@ -99,7 +120,10 @@ def load_chapter():
 
     try:
 
-        url = request.form.get("url", "").strip()
+        url = request.form.get(
+            "url",
+            ""
+        ).strip()
 
         chapter = int(
             request.form.get(
@@ -115,12 +139,6 @@ def load_chapter():
             )
         )
 
-
-
-        # =============================
-        # VALIDATIONS
-        # =============================
-
         if not url:
 
             logger.warning(
@@ -132,13 +150,10 @@ def load_chapter():
                 "message": "URL is required"
             }), 400
 
-
-
         if chapter <= 0:
 
             logger.warning(
-                f"[LOAD] Invalid chapter: "
-                f"{chapter}"
+                f"[LOAD] Invalid chapter: {chapter}"
             )
 
             return jsonify({
@@ -146,94 +161,58 @@ def load_chapter():
                 "message": "Invalid chapter"
             }), 400
 
-
-
         if limit <= 0 or limit > 300:
 
             logger.warning(
-                f"[LOAD] Invalid limit: "
-                f"{limit}"
+                f"[LOAD] Invalid limit: {limit}"
             )
 
             return jsonify({
                 "success": False,
                 "message": (
-                    "Limit must be "
-                    "between 1 and 300"
+                    "Limit must be between 1 and 300"
                 )
             }), 400
 
-
-
         logger.info(
-            f"[LOAD] "
-            f"URL={url} | "
+            f"[LOAD] URL={url} | "
             f"CHAPTER={chapter} | "
             f"LIMIT={limit}"
         )
 
-
-
-        # =============================
-        # FETCH HTML
-        # =============================
-
         logger.info(
-            "[SCRAPER] "
-            "Fetching HTML..."
+            "[SCRAPER] Fetching HTML..."
         )
 
         html = get_html(url)
 
-
-
-        # =============================
-        # SAMPLE IMAGE
-        # =============================
-
         logger.info(
-            "[SCRAPER] "
-            "Extracting sample image..."
+            "[SCRAPER] Extracting sample image..."
         )
 
         sample_image = extract_sample_image(
             html
         )
 
-
-
         if not sample_image:
 
             logger.warning(
-                "[SCRAPER] "
-                "No sample image found"
+                "[SCRAPER] No sample image found"
             )
 
             return jsonify({
                 "success": False,
                 "message": (
-                    "Could not detect "
-                    "sample image"
+                    "Could not detect sample image"
                 )
             }), 404
 
-
-
         logger.info(
-            f"[SCRAPER] "
-            f"Sample Image: "
-            f"{sample_image}"
+            f"[SCRAPER] Sample={sample_image}"
         )
 
-
-
-        # =============================
-        # GENERATE IMAGES
-        # =============================
-
         logger.info(
-            "[SCRAPER] "
-            "Generating chapter images..."
+            "[SCRAPER] Generating images..."
         )
 
         images = generate_chapter_images(
@@ -242,44 +221,28 @@ def load_chapter():
             limit
         )
 
-
-
         total_time = round(
             time.time() - start_time,
             2
         )
 
-
-
         logger.info(
-            f"[SUCCESS] "
-            f"Chapter {chapter} "
+            f"[SUCCESS] Chapter {chapter} "
             f"loaded with "
             f"{len(images)} images "
             f"in {total_time}s"
         )
 
-
-
         return jsonify({
-
             "success": True,
-
             "images": images,
-
             "chapter": chapter,
-
             "sample": sample_image,
-
             "count": len(images),
-
             "load_time": total_time
-
         })
 
-
-
-    except ValueError as e:
+    except ValueError:
 
         logger.exception(
             "[VALUE ERROR]"
@@ -287,12 +250,8 @@ def load_chapter():
 
         return jsonify({
             "success": False,
-            "message": (
-                "Invalid numeric input"
-            )
+            "message": "Invalid numeric input"
         }), 400
-
-
 
     except Exception as e:
 
@@ -306,107 +265,36 @@ def load_chapter():
             traceback.format_exc()
         )
 
-
-
         return jsonify({
-
             "success": False,
-
-            "message": (
-                "Internal server error"
-            ),
-
+            "message": "Internal server error",
             "error": str(e)
-
         }), 500
-
-
-
-# =========================================
-# VIEWER PAGE
-# =========================================
-
-@app.route("/viewer")
-def viewer():
-
-    try:
-
-        logger.info(
-            "[VIEWER] "
-            "Rendering viewer"
-        )
-
-        return render_template(
-            "viewer.html"
-        )
-
-    except Exception:
-
-        logger.exception(
-            "[VIEWER ERROR]"
-        )
-
-        return (
-            "Viewer Error",
-            500
-        )
-
-
-
-# =========================================
-# HEALTH CHECK
-# =========================================
 
 @app.route("/health")
 def health():
 
     return jsonify({
-
         "success": True,
-
         "status": "running"
-
     })
-
-
-
-# =========================================
-# API STATUS
-# =========================================
 
 @app.route("/api/status")
 def api_status():
 
     return jsonify({
-
         "success": True,
-
-        "service": (
-            "Hentai Manga Reader API"
-        ),
-
-        "version": "1.0.0"
-
+        "service": "Hentai Manga Dashboard API",
+        "version": "3.0.0"
     })
-
-
-
-# =========================================
-# GLOBAL ERROR HANDLER
-# =========================================
 
 @app.errorhandler(404)
 def not_found(e):
 
     return jsonify({
-
         "success": False,
-
         "message": "Route not found"
-
     }), 404
-
-
 
 @app.errorhandler(500)
 def internal_error(e):
@@ -416,20 +304,9 @@ def internal_error(e):
     )
 
     return jsonify({
-
         "success": False,
-
-        "message": (
-            "Internal server error"
-        )
-
+        "message": "Internal server error"
     }), 500
-
-
-
-# =========================================
-# MAIN
-# =========================================
 
 if __name__ == "__main__":
 
@@ -438,7 +315,7 @@ if __name__ == "__main__":
     )
 
     logger.info(
-        "Starting Hentai Manga Reader"
+        "Starting Hentai Manga Dashboard"
     )
 
     logger.info(
@@ -449,15 +326,9 @@ if __name__ == "__main__":
         "================================="
     )
 
-
-
     app.run(
-
         host="0.0.0.0",
-
         port=5000,
-
         debug=True,
-
         threaded=True
     )
